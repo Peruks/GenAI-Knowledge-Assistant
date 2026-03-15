@@ -1,10 +1,27 @@
+"""
+RAG Pipeline with Pinecone + Gemini
+
+Steps:
+1. Convert user question into embedding
+2. Retrieve relevant chunks from Pinecone
+3. Build context from retrieved chunks
+4. Send context + question to Gemini
+5. Generate answer with sources
+"""
+
 import os
 from dotenv import load_dotenv
+
 from pinecone import Pinecone
 from sentence_transformers import SentenceTransformer
+
 import google.generativeai as genai
 
-# load environment variables
+
+# ------------------------------------------------
+# 1. Load Environment Variables
+# ------------------------------------------------
+
 load_dotenv()
 
 PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
@@ -12,48 +29,122 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
 INDEX_NAME = "enterprise-rag-index"
 
-# configure Gemini
+
+# ------------------------------------------------
+# 2. Configure Gemini
+# ------------------------------------------------
+
 genai.configure(api_key=GEMINI_API_KEY)
+
 model = genai.GenerativeModel("gemini-2.5-flash")
 
-# connect to Pinecone
+
+# ------------------------------------------------
+# 3. Connect to Pinecone
+# ------------------------------------------------
+
 pc = Pinecone(api_key=PINECONE_API_KEY)
+
 index = pc.Index(INDEX_NAME)
 
-# embedding model
-embed_model = SentenceTransformer("all-MiniLM-L6-v2")
 
-# user question
+# ------------------------------------------------
+# 4. Load Embedding Model
+# ------------------------------------------------
+
+embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
+
+
+# ------------------------------------------------
+# 5. User Query
+# ------------------------------------------------
+
 query = "What is the refund policy?"
 
-# convert question to embedding
-query_embedding = embed_model.encode(query).tolist()
 
-# search Pinecone
+# ------------------------------------------------
+# 6. Convert Query to Embedding
+# ------------------------------------------------
+
+query_embedding = embedding_model.encode(query).tolist()
+
+
+# ------------------------------------------------
+# 7. Retrieve Relevant Documents from Pinecone
+# ------------------------------------------------
+
 results = index.query(
     vector=query_embedding,
     top_k=3,
     include_metadata=True
 )
 
-# collect retrieved text
-context = ""
-for match in results["matches"]:
-    context += match["metadata"]["text"] + "\n"
 
-# build prompt
+# ------------------------------------------------
+# 8. Build Context from Retrieved Chunks
+# ------------------------------------------------
+
+context_chunks = []
+sources = []
+
+for match in results["matches"]:
+    text = match["metadata"]["text"]
+    context_chunks.append(text)
+    sources.append(text)
+
+context = "\n".join(context_chunks)
+
+
+# ------------------------------------------------
+# 9. Build Prompt for Gemini
+# ------------------------------------------------
+
 prompt = f"""
-Use the following information to answer the question.
+You are an intelligent AI assistant for answering questions using company documents.
+
+Your task is to answer the user's question ONLY using the provided context.
+
+Rules:
+- Use only the information from the context.
+- Do not invent information.
+- If the answer is not present in the context, say:
+  "The information is not available in the provided documents."
+- Provide a clear and concise answer.
+- Mention the relevant source information used.
 
 Context:
 {context}
 
-Question:
+User Question:
 {query}
+
+Answer:
 """
 
-# ask Gemini
+
+# ------------------------------------------------
+# 10. Generate Answer using Gemini
+# ------------------------------------------------
+
 response = model.generate_content(prompt)
 
-print("\nAnswer:\n")
-print(response.text)
+answer = response.text
+
+
+# ------------------------------------------------
+# 11. Display Result
+# ------------------------------------------------
+
+print("\n==============================")
+print("User Question:")
+print(query)
+
+print("\nGenerated Answer:")
+print(answer)
+
+print("\nSources Used:")
+
+for s in sources:
+    print("-", s)
+
+print("==============================")
