@@ -1,8 +1,8 @@
 fastapi
 uvicorn
-langchain
-langgraph
-pinecone-client
+pinecone
 sentence-transformers
 python-dotenv
-pydantic
+google-generativeai
+streamlit
+requests
