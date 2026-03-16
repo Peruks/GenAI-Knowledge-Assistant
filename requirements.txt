@@ -4,12 +4,8 @@ uvicorn[standard]
 pinecone-client
 
 sentence-transformers
-torch==2.1.2
 
 google-generativeai
 
 python-dotenv
 requests
-
-langchain
-streamlit
