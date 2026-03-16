@@ -6,7 +6,9 @@ import time
 # Configuration
 # ------------------------------------------------
 
-API_URL = "https://genai-knowledge-assistant.onrender.com/ask"
+API_BASE = "https://genai-knowledge-assistant.onrender.com"
+ASK_URL = f"{API_BASE}/ask"
+UPLOAD_URL = f"{API_BASE}/upload"
 
 st.set_page_config(
     page_title="Enterprise GenAI Assistant",
@@ -16,7 +18,7 @@ st.set_page_config(
 )
 
 # ------------------------------------------------
-# Custom CSS - Dark Modern Theme
+# Custom CSS
 # ------------------------------------------------
 
 st.markdown("""
@@ -136,6 +138,18 @@ section[data-testid="stSidebar"] * {
     margin-top: 0.5rem;
 }
 
+.upload-info {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.7rem;
+    color: #3a3a5a;
+    background: #0f0f1a;
+    border: 1px solid #1e1e2e;
+    border-radius: 8px;
+    padding: 0.8rem;
+    margin-top: 0.5rem;
+    line-height: 1.7;
+}
+
 .empty-state {
     text-align: center;
     padding: 4rem 2rem;
@@ -218,6 +232,9 @@ if "sources_found" not in st.session_state:
 if "session_id" not in st.session_state:
     st.session_state.session_id = f"user_{int(time.time())}"
 
+if "uploaded_docs" not in st.session_state:
+    st.session_state.uploaded_docs = []
+
 
 # ------------------------------------------------
 # Sidebar
@@ -238,7 +255,7 @@ with st.sidebar:
     <hr style='border-color: #1e1e2e; margin: 0.8rem 0;'>
     """, unsafe_allow_html=True)
 
-    # Core metrics
+    # ---- Metrics ----
     st.markdown(f"""
     <div class='metric-card'>
         <div class='metric-value'>{st.session_state.total_questions}</div>
@@ -250,7 +267,6 @@ with st.sidebar:
     </div>
     """, unsafe_allow_html=True)
 
-    # Live metrics after first question
     if st.session_state.total_questions > 0:
         avg_time = st.session_state.total_time / st.session_state.total_questions
         st.markdown(f"""
@@ -266,7 +282,62 @@ with st.sidebar:
 
     st.markdown("<hr style='border-color: #1e1e2e; margin: 1rem 0;'>", unsafe_allow_html=True)
 
-    # Session ID
+    # ---- Document Upload ----
+    st.markdown("""
+    <div style='font-family: IBM Plex Mono, monospace; font-size: 0.72rem;
+                color: #6366f1; text-transform: uppercase; letter-spacing: 0.08em;
+                margin-bottom: 0.5rem;'>
+        Upload Document
+    </div>
+    """, unsafe_allow_html=True)
+
+    uploaded_file = st.file_uploader(
+        "Upload PDF or TXT",
+        type=["pdf", "txt"],
+        label_visibility="collapsed"
+    )
+
+    if uploaded_file:
+        if st.button("⬆  Index Document", use_container_width=True):
+            with st.spinner("Indexing document..."):
+                try:
+                    files = {"file": (uploaded_file.name, uploaded_file.getvalue(), uploaded_file.type)}
+                    response = requests.post(UPLOAD_URL, files=files, timeout=120)
+
+                    if response.status_code == 200:
+                        data = response.json()
+                        st.success(f"✅ Indexed {data['total_chunks']} chunks")
+                        st.session_state.uploaded_docs.append(uploaded_file.name)
+                    else:
+                        st.error(f"Upload failed: {response.status_code}")
+
+                except requests.exceptions.Timeout:
+                    st.warning("⏱ Upload timed out. Large documents take longer — try again.")
+                except Exception as e:
+                    st.error(f"Error: {str(e)}")
+
+    # Show uploaded docs this session
+    if st.session_state.uploaded_docs:
+        st.markdown(f"""
+        <div style='font-family: IBM Plex Mono, monospace; font-size: 0.68rem;
+                    color: #3a3a5a; margin-top: 0.5rem;'>
+            INDEXED THIS SESSION<br>
+            {'<br>'.join([f"<span style='color:#4a4a6a;'>✓ {d}</span>" for d in st.session_state.uploaded_docs])}
+        </div>
+        """, unsafe_allow_html=True)
+
+    # Upload info note
+    st.markdown("""
+    <div class='upload-info'>
+        Large documents are processed<br>
+        incrementally (page-by-page) to<br>
+        stay stable within free-tier limits.
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.markdown("<hr style='border-color: #1e1e2e; margin: 1rem 0;'>", unsafe_allow_html=True)
+
+    # ---- Session ----
     st.markdown(f"""
     <div style='font-family: IBM Plex Mono, monospace; font-size: 0.7rem; color: #3a3a5a;'>
         SESSION<br>
@@ -276,7 +347,6 @@ with st.sidebar:
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # Clear button
     if st.button("↺  Clear Conversation", use_container_width=True):
         st.session_state.messages = []
         st.session_state.total_questions = 0
@@ -287,7 +357,7 @@ with st.sidebar:
 
     st.markdown("<hr style='border-color: #1e1e2e; margin: 1rem 0;'>", unsafe_allow_html=True)
 
-    # Powered by
+    # ---- Powered by ----
     st.markdown("""
     <div style='font-family: IBM Plex Mono, monospace; font-size: 0.68rem; color: #2a2a4a; line-height: 1.8;'>
         POWERED BY<br>
@@ -322,7 +392,9 @@ if not st.session_state.messages:
     <div class='empty-state'>
         <div class='empty-state-icon'>◈</div>
         <div class='empty-state-text'>Ask anything about company policies</div>
-        <div class='empty-state-hint'>Powered by your enterprise knowledge base</div>
+        <div class='empty-state-hint'>
+            Upload a document from the sidebar or ask about existing knowledge base
+        </div>
     </div>
     """, unsafe_allow_html=True)
 
@@ -355,7 +427,7 @@ else:
 # Chat Input
 # ------------------------------------------------
 
-question = st.chat_input("Ask about company policies, procedures, or documents...")
+question = st.chat_input("Ask about company policies, procedures, or uploaded documents...")
 
 if question:
 
@@ -380,11 +452,7 @@ if question:
                     "session_id": st.session_state.session_id
                 }
 
-                response = requests.post(
-                    API_URL,
-                    json=payload,
-                    timeout=30
-                )
+                response = requests.post(ASK_URL, json=payload, timeout=30)
 
                 elapsed = time.time() - start_time
 
@@ -436,7 +504,7 @@ if question:
                     })
 
             except requests.exceptions.Timeout:
-                msg = "⏱ Request timed out. The backend may be starting up — please try again in a moment."
+                msg = "⏱ Request timed out. The backend may be starting up — please try again."
                 st.warning(msg)
                 st.session_state.messages.append({
                     "role": "assistant",

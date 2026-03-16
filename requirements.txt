@@ -1,9 +1,12 @@
 fastapi
 uvicorn[standard]
+python-multipart
 
-pinecone
+pinecone-client
 
 google-genai
 
 python-dotenv
 requests
+pypdf
+langchain-text-splitters
