@@ -268,8 +268,9 @@ async def upload_document(file: UploadFile = File(...)):
                         "metadata": {
                             "text": chunk,
                             "source": file.filename,
-                            "page": page_num + 1
-                        }
+                            "page": page_num + 1,
+                            "chunk_id": f"{file.filename}_p{page_num + 1}_{total_chunks}"
+                    }
                     })
 
                     total_chunks += 1
@@ -300,7 +301,8 @@ async def upload_document(file: UploadFile = File(...)):
                     "metadata": {
                         "text": chunk,
                         "source": file.filename,
-                        "page": 1
+                        "page": 1,
+                        "chunk_id": f"{file.filename}_p1_{total_chunks}"
                     }
                 })
 
@@ -325,6 +327,6 @@ async def upload_document(file: UploadFile = File(...)):
 
     except Exception as e:
         # Cleanup on error
-        if os.path.exists(tmp_path):
+        if 'tmp_path' in locals() and os.path.exists(tmp_path):
             os.unlink(tmp_path)
         raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")
