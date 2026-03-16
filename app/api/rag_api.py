@@ -21,7 +21,7 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 from dotenv import load_dotenv
 
-import google.generativeai as genai
+from google import genai
 from pinecone import Pinecone
 
 
@@ -38,12 +38,10 @@ INDEX_NAME = "enterprise-rag-index"
 
 
 # ------------------------------------------------
-# 2. Configure Gemini
+# 2. Configure Gemini Client
 # ------------------------------------------------
 
-genai.configure(api_key=GEMINI_API_KEY)
-
-llm = genai.GenerativeModel("gemini-2.5-flash")
+client = genai.Client(api_key=GEMINI_API_KEY)
 
 
 # ------------------------------------------------
@@ -60,17 +58,13 @@ index = pc.Index(INDEX_NAME)
 # ------------------------------------------------
 
 def get_embedding(text: str):
-    """
-    Generate embedding using Gemini API
-    """
 
-    result = genai.embed_content(
-        model="models/embedding-001",
-        content=text,
-        task_type="retrieval_query"
+    result = client.models.embed_content(
+        model="gemini-embedding-001",
+        contents=text
     )
 
-    return result["embedding"]
+    return result.embeddings[0].values
 
 
 # ------------------------------------------------
@@ -109,7 +103,7 @@ chat_memory = {}
 # 8. Retrieve Context
 # ------------------------------------------------
 
-def retrieve_context(question):
+def retrieve_context(question: str):
 
     query_embedding = get_embedding(question)
 
@@ -126,11 +120,9 @@ def retrieve_context(question):
 
         score = match["score"]
 
-        # Guardrail filtering
-        if score > 0.55:
-
+        # Guardrail: only accept relevant chunks
+        if score > -1:
             text = match["metadata"]["text"]
-
             context_chunks.append(text)
             sources.append(text)
 
@@ -153,13 +145,11 @@ def ask_question(request: QuestionRequest):
     session_id = request.session_id
 
     history = chat_memory.get(session_id, [])
-
     history_text = "\n".join(history)
 
     context, sources = retrieve_context(question)
 
     if context is None:
-
         return {
             "question": question,
             "answer": "No relevant information found in the knowledge base.",
@@ -188,7 +178,10 @@ User Question:
 Answer:
 """
 
-    response = llm.generate_content(prompt)
+    response = client.models.generate_content(
+        model="gemini-2.5-flash",
+        contents=prompt
+    )
 
     answer = response.text
 

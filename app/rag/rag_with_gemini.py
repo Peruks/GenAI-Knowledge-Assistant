@@ -2,7 +2,7 @@
 RAG Pipeline with Pinecone + Gemini
 
 Pipeline Steps:
-1. Convert user question into embedding
+1. Convert user question into embedding (Gemini)
 2. Retrieve relevant chunks from Pinecone
 3. Build context from retrieved chunks
 4. Send context + question to Gemini
@@ -11,9 +11,7 @@ Pipeline Steps:
 
 import os
 from dotenv import load_dotenv
-
 from pinecone import Pinecone
-from sentence_transformers import SentenceTransformer
 import google.generativeai as genai
 
 
@@ -48,7 +46,7 @@ pinecone_index = None
 def get_pinecone_index():
     """
     Lazy load Pinecone index.
-    This prevents heavy initialization during server startup.
+    Prevents initialization during server startup.
     """
 
     global pinecone_index
@@ -61,25 +59,21 @@ def get_pinecone_index():
 
 
 # ------------------------------------------------
-# 4. Embedding Model (Lazy Load)
+# 4. Gemini Embedding Function
 # ------------------------------------------------
 
-embedding_model = None
-
-
-def get_embedding_model():
+def get_embedding(text: str):
     """
-    Lazy load embedding model.
-    Model loads only when the first query arrives.
+    Generate embeddings using Gemini API
     """
 
-    global embedding_model
+    result = genai.embed_content(
+        model="models/embedding-001",
+        content=text,
+        task_type="retrieval_query"
+    )
 
-    if embedding_model is None:
-        print("Loading embedding model...")
-        embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
-
-    return embedding_model
+    return result["embedding"]
 
 
 # ------------------------------------------------
@@ -88,23 +82,14 @@ def get_embedding_model():
 
 def ask_rag(question: str):
     """
-    Main RAG pipeline.
-
-    Input:
-        question (str)
-
-    Returns:
-        answer (str)
-        sources (list)
+    Improved RAG pipeline with relevance filtering
     """
 
     # ---------------------------------------------
     # Step 1: Convert question to embedding
     # ---------------------------------------------
 
-    model = get_embedding_model()
-
-    query_embedding = model.encode(question).tolist()
+    query_embedding = get_embedding(question)
 
     # ---------------------------------------------
     # Step 2: Retrieve documents from Pinecone
@@ -114,26 +99,45 @@ def ask_rag(question: str):
 
     results = index.query(
         vector=query_embedding,
-        top_k=3,
+        top_k=5,
         include_metadata=True
     )
 
     # ---------------------------------------------
-    # Step 3: Build context from retrieved chunks
+    # Step 3: Filter by relevance score
     # ---------------------------------------------
 
     context_chunks = []
     sources = []
 
+    SCORE_THRESHOLD = 0.55
+
     for match in results["matches"]:
-        text = match["metadata"]["text"]
-        context_chunks.append(text)
-        sources.append(text)
+
+        score = match["score"]
+
+        if score >= SCORE_THRESHOLD:
+
+            text = match["metadata"]["text"]
+
+            context_chunks.append(text)
+            sources.append(text)
+
+    # If nothing relevant found
+    if not context_chunks:
+        return "No relevant information found in the knowledge base.", []
+
+    # ---------------------------------------------
+    # Step 4: Limit context size
+    # ---------------------------------------------
+
+    MAX_CHUNKS = 3
+    context_chunks = context_chunks[:MAX_CHUNKS]
 
     context = "\n".join(context_chunks)
 
     # ---------------------------------------------
-    # Step 4: Build prompt
+    # Step 5: Prompt
     # ---------------------------------------------
 
     prompt = f"""
@@ -155,7 +159,7 @@ Answer:
 """
 
     # ---------------------------------------------
-    # Step 5: Generate answer using Gemini
+    # Step 6: Generate answer
     # ---------------------------------------------
 
     response = gemini_model.generate_content(prompt)

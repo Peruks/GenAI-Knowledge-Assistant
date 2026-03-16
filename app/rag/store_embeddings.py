@@ -1,27 +1,68 @@
+"""
+Store Embeddings in Pinecone using Gemini Embedding API
+"""
+
 import os
 from dotenv import load_dotenv
 from pinecone import Pinecone
-from sentence_transformers import SentenceTransformer
+from google import genai
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
-# load .env variables
+
+# ------------------------------------------------
+# 1. Load Environment Variables
+# ------------------------------------------------
+
 load_dotenv()
 
 PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+
 INDEX_NAME = "enterprise-rag-index"
 
-# connect to Pinecone
+
+# ------------------------------------------------
+# 2. Configure Gemini
+# ------------------------------------------------
+
+client = genai.Client(api_key=GEMINI_API_KEY)
+
+
+# ------------------------------------------------
+# 3. Connect to Pinecone
+# ------------------------------------------------
+
 pc = Pinecone(api_key=PINECONE_API_KEY)
+
 index = pc.Index(INDEX_NAME)
 
-# load embedding model
-model = SentenceTransformer("all-MiniLM-L6-v2")
 
-# read document
+# ------------------------------------------------
+# 4. Gemini Embedding Function
+# ------------------------------------------------
+
+def get_embedding(text: str):
+
+    result = client.models.embed_content(
+        model="gemini-embedding-2-preview",
+        contents=text
+    )
+
+    return result.embeddings[0].values
+
+
+# ------------------------------------------------
+# 5. Load Document
+# ------------------------------------------------
+
 with open("data/company_policy.txt", "r", encoding="utf-8") as file:
     text = file.read()
 
-# split text
+
+# ------------------------------------------------
+# 6. Split Text into Chunks
+# ------------------------------------------------
+
 splitter = RecursiveCharacterTextSplitter(
     chunk_size=200,
     chunk_overlap=50
@@ -29,10 +70,16 @@ splitter = RecursiveCharacterTextSplitter(
 
 chunks = splitter.split_text(text)
 
+
+# ------------------------------------------------
+# 7. Generate Embeddings
+# ------------------------------------------------
+
 vectors = []
 
 for i, chunk in enumerate(chunks):
-    embedding = model.encode(chunk).tolist()
+
+    embedding = get_embedding(chunk)
 
     vectors.append({
         "id": f"chunk-{i}",
@@ -40,7 +87,13 @@ for i, chunk in enumerate(chunks):
         "metadata": {"text": chunk}
     })
 
-# upload to pinecone
+print(len(get_embedding("test sentence")))
+# ------------------------------------------------
+# 8. Upload to Pinecone
+# ------------------------------------------------
+
 index.upsert(vectors)
 
-print("Embeddings uploaded to Pinecone!")
+
+print("Embeddings uploaded successfully!")
+print(f"Total chunks uploaded: {len(vectors)}")

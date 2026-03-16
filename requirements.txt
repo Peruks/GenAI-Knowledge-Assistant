@@ -3,7 +3,7 @@ uvicorn[standard]
 
 pinecone
 
-google-generativeai
+google-genai
 
 python-dotenv
 requests
