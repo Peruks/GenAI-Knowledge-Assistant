@@ -33,7 +33,17 @@ html, body, [class*="css"] {
 
 .stApp { background: #0a0a0f; }
 
-#MainMenu, footer, header { visibility: hidden; }
+#MainMenu, footer { visibility: hidden; }
+header { visibility: hidden; }
+
+/* Always show sidebar toggle button */
+button[kind="headerNominal"],
+[data-testid="collapsedControl"] {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    color: #a78bfa !important;
+}
 .stDeployButton { display: none; }
 
 section[data-testid="stSidebar"] {
