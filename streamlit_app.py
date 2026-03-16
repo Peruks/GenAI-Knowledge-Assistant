@@ -32,25 +32,29 @@ st.markdown("""
 @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap');
 
 :root {
-    --bg:       #040508;
-    --bg1:      #080c14;
-    --bg2:      #0c1120;
-    --bg3:      #10162a;
-    --b0:       #0d1220;
-    --b1:       #141d35;
-    --b2:       #1c2640;
-    --txt:      #dde3ff;
-    --txt2:     #6b75a0;
-    --txt3:     #2e3560;
-    --acc:      #4f6ef7;
-    --acc2:     #7c3aed;
-    --grn:      #0ea472;
-    --cyn:      #0891b2;
-    --amb:      #d97706;
-    --red:      #dc2626;
+    --bg:    #030508;
+    --bg1:   #070b15;
+    --bg2:   #0b1020;
+    --bg3:   #0f1628;
+    --b0:    #0c1120;
+    --b1:    #131c35;
+    --b2:    #1a2540;
+    --b3:    #222e50;
+    --txt:   #dde3ff;
+    --txt2:  #6b75a0;
+    --txt3:  #2e3560;
+    --acc:   #4f6ef7;
+    --acc2:  #7c3aed;
+    --grn:   #0ea472;
+    --cyn:   #0891b2;
+    --amb:   #d97706;
+    --user-bg: rgba(79,110,247,0.10);
+    --user-br: rgba(79,110,247,0.25);
+    --bot-bg:  #080d1a;
+    --bot-br:  #131c35;
 }
 
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+*, *::before, *::after { box-sizing: border-box; }
 
 html, body, .stApp {
     font-family: 'Space Grotesk', sans-serif !important;
@@ -58,14 +62,13 @@ html, body, .stApp {
     color: var(--txt) !important;
 }
 
-/* grid background */
 .stApp {
     background-image:
-        radial-gradient(ellipse 80% 50% at 50% -5%,
-            rgba(79,110,247,0.07) 0%, transparent 55%),
-        linear-gradient(rgba(79,110,247,0.025) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(79,110,247,0.025) 1px, transparent 1px) !important;
-    background-size: 100% 100%, 44px 44px, 44px 44px !important;
+        radial-gradient(ellipse 70% 40% at 50% -8%,
+            rgba(79,110,247,0.08) 0%, transparent 60%),
+        linear-gradient(rgba(79,110,247,0.018) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(79,110,247,0.018) 1px, transparent 1px) !important;
+    background-size: 100% 100%, 48px 48px, 48px 48px !important;
     background-attachment: fixed !important;
 }
 
@@ -76,13 +79,11 @@ header { visibility: hidden !important; }
 [data-testid="collapsedControl"] { display: none !important; }
 section[data-testid="stSidebar"] { display: none !important; }
 
-/* hide ALL chat avatars — this kills the face/logo bug */
+/* kill ALL streamlit chat avatars */
 [data-testid="chatAvatarIcon-user"],
 [data-testid="chatAvatarIcon-assistant"],
 [data-testid="stChatMessageAvatarUser"],
-[data-testid="stChatMessageAvatarAssistant"],
-.stChatMessage [data-testid="stImage"],
-.stChatMessage img {
+[data-testid="stChatMessageAvatarAssistant"] {
     display: none !important;
 }
 
@@ -94,172 +95,170 @@ section[data-testid="stSidebar"] { display: none !important; }
 }
 
 .block-container {
-    padding-top: 1.5rem !important;
-    max-width: 1080px !important;
+    padding-top: 1.8rem !important;
+    max-width: 1060px !important;
 }
 
-/* ── TOPBAR ── */
+/* ══════════════════════════════
+   TOPBAR
+══════════════════════════════ */
 .topbar {
-    display: flex;
-    align-items: center;
+    display: flex; align-items: center;
     justify-content: space-between;
     padding-bottom: 18px;
     border-bottom: 1px solid var(--b1);
     margin-bottom: 28px;
-    animation: slidedown 0.5s ease both;
+    animation: slidedown .5s ease both;
 }
 
 .tb-left { display: flex; align-items: center; gap: 12px; }
 
-.hex-logo {
+.hex {
     width: 36px; height: 36px;
     background: linear-gradient(135deg, var(--acc), var(--acc2));
     clip-path: polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);
     display: grid; place-items: center;
     font-family: 'Space Mono', monospace !important;
-    font-size: 0.72rem; font-weight: 700;
-    color: #fff !important;
-    flex-shrink: 0;
+    font-weight: 700; font-size: 0.7rem;
+    color: #fff !important; flex-shrink: 0;
 }
-
-.brand { line-height: 1.2; }
 
 .brand-name {
     font-family: 'Space Grotesk', sans-serif !important;
     font-weight: 700; font-size: 1rem;
-    letter-spacing: 0.04em;
-    color: var(--txt) !important;
+    letter-spacing: 0.06em; color: var(--txt) !important;
 }
 
 .brand-sub {
     font-family: 'Space Mono', monospace !important;
-    font-size: 0.55rem; color: var(--txt3) !important;
+    font-size: 0.52rem; color: var(--txt3) !important;
     letter-spacing: 0.12em; text-transform: uppercase;
 }
 
-.status-chip {
+.online-chip {
     display: flex; align-items: center; gap: 7px;
     background: rgba(14,164,114,0.07);
     border: 1px solid rgba(14,164,114,0.18);
-    border-radius: 99px;
-    padding: 5px 14px;
+    border-radius: 99px; padding: 5px 14px;
     font-family: 'Space Mono', monospace !important;
-    font-size: 0.6rem; color: var(--grn) !important;
+    font-size: 0.58rem; color: var(--grn) !important;
     letter-spacing: 0.1em; text-transform: uppercase;
 }
 
 .blink {
     width: 6px; height: 6px; border-radius: 50%;
     background: var(--grn);
-    animation: blinkpulse 2s ease-in-out infinite;
+    animation: blinkbeat 2s ease-in-out infinite;
 }
 
-@keyframes blinkpulse {
+@keyframes blinkbeat {
     0%,100% { opacity:1; box-shadow:0 0 0 0 rgba(14,164,114,.5); }
-    50%      { opacity:.5; box-shadow:0 0 0 5px rgba(14,164,114,0); }
+    50%      { opacity:.5; box-shadow:0 0 0 6px rgba(14,164,114,0); }
 }
 
-/* ── HERO ── */
+/* ══════════════════════════════
+   HERO
+══════════════════════════════ */
 .hero {
     text-align: center;
-    padding: 24px 0 20px;
-    animation: slideup 0.6s ease both;
+    padding: 22px 0 18px;
+    animation: slideup .6s ease both;
 }
 
-.hero-tag {
+.hero-eye {
     font-family: 'Space Mono', monospace !important;
-    font-size: 0.6rem; letter-spacing: 0.22em;
+    font-size: 0.58rem; letter-spacing: 0.22em;
     text-transform: uppercase; color: var(--acc) !important;
-    margin-bottom: 14px;
+    margin-bottom: 12px;
 }
 
 .hero-h1 {
     font-family: 'Space Grotesk', sans-serif !important;
-    font-weight: 700; font-size: 2.8rem;
-    letter-spacing: -0.04em; line-height: 1.05;
-    color: var(--txt) !important;
+    font-weight: 700; font-size: 2.6rem;
+    letter-spacing: -0.04em; line-height: 1.06;
+    color: var(--txt) !important; margin-bottom: 12px;
 }
 
 .hero-h1 .hl {
-    background: linear-gradient(90deg, #6080ff 0%, #a78bfa 55%, #38bdf8 100%);
+    background: linear-gradient(90deg,#6080ff,#a78bfa 55%,#38bdf8);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
-    filter: drop-shadow(0 0 24px rgba(96,128,255,.25));
+    filter: drop-shadow(0 0 28px rgba(96,128,255,.28));
 }
 
 .hero-mono {
     font-family: 'Space Mono', monospace !important;
-    font-size: 0.65rem; letter-spacing: 0.08em;
-    color: var(--txt3) !important; margin: 12px 0 16px;
+    font-size: 0.62rem; letter-spacing: 0.08em;
+    color: var(--txt3) !important; margin-bottom: 14px;
 }
 
-.pill-row {
+.pills {
     display: flex; justify-content: center;
     flex-wrap: wrap; gap: 6px;
 }
 
 .pill {
     font-family: 'Space Mono', monospace !important;
-    font-size: 0.58rem; color: var(--txt3) !important;
+    font-size: 0.56rem; color: var(--txt3) !important;
     background: var(--bg1); border: 1px solid var(--b1);
     border-radius: 4px; padding: 3px 10px;
-    letter-spacing: 0.06em;
-    transition: border-color .2s, color .2s;
+    letter-spacing: 0.05em;
 }
 
-/* ── METRICS ── */
+/* ══════════════════════════════
+   METRICS
+══════════════════════════════ */
 .metrics {
     display: grid; grid-template-columns: repeat(4,1fr);
-    gap: 10px; margin: 22px 0;
-    animation: slideup 0.7s ease both;
+    gap: 10px; margin: 20px 0;
+    animation: slideup .7s ease both;
 }
 
 .mc {
-    background: var(--bg1);
-    border: 1px solid var(--b1);
-    border-radius: 10px; padding: 18px 12px;
-    text-align: center; position: relative;
-    overflow: hidden;
+    background: var(--bg1); border: 1px solid var(--b1);
+    border-radius: 10px; padding: 16px 12px;
+    text-align: center; position: relative; overflow: hidden;
     transition: transform .2s, border-color .2s;
 }
 
-.mc:hover { transform: translateY(-2px); border-color: var(--b2); }
+.mc:hover { transform: translateY(-3px); border-color: var(--b2); }
 
 .mc::before {
     content: '';
-    position: absolute; top: 0; left: 0; right: 0;
-    height: 2px;
+    position: absolute; top: 0; left: 0; right: 0; height: 2px;
     background: linear-gradient(90deg, transparent, var(--c), transparent);
-    opacity: .7;
+    opacity: .8;
 }
 
-.mc:nth-child(1) { --c: var(--acc); }
-.mc:nth-child(2) { --c: var(--cyn); }
-.mc:nth-child(3) { --c: var(--grn); }
-.mc:nth-child(4) { --c: var(--amb); }
+.mc:nth-child(1) { --c: #4f6ef7; }
+.mc:nth-child(2) { --c: #0891b2; }
+.mc:nth-child(3) { --c: #0ea472; }
+.mc:nth-child(4) { --c: #d97706; }
 
 .mv {
     font-family: 'Space Grotesk', sans-serif !important;
-    font-weight: 700; font-size: 2rem; line-height: 1;
+    font-weight: 700; font-size: 1.9rem; line-height: 1;
 }
-.mv.a { color: var(--acc) !important; }
-.mv.b { color: var(--cyn) !important; }
-.mv.c { color: var(--grn) !important; }
-.mv.d { color: var(--amb) !important; }
+
+.mv.a { color: #4f6ef7 !important; }
+.mv.b { color: #0891b2 !important; }
+.mv.c { color: #0ea472 !important; }
+.mv.d { color: #d97706 !important; }
 
 .ml {
     font-family: 'Space Mono', monospace !important;
-    font-size: 0.55rem; color: var(--txt3) !important;
-    text-transform: uppercase; letter-spacing: 0.12em;
-    margin-top: 5px;
+    font-size: 0.52rem; color: var(--txt3) !important;
+    text-transform: uppercase; letter-spacing: 0.12em; margin-top: 5px;
 }
 
-/* ── TABS ── */
+/* ══════════════════════════════
+   TABS
+══════════════════════════════ */
 .stTabs [data-baseweb="tab-list"] {
     background: transparent !important;
     border-bottom: 1px solid var(--b1) !important;
-    gap: 0 !important; margin-bottom: 24px !important;
+    gap: 0 !important; margin-bottom: 22px !important;
 }
 
 .stTabs [data-baseweb="tab"] {
@@ -268,10 +267,9 @@ section[data-testid="stSidebar"] { display: none !important; }
     border-bottom: 1px solid transparent !important;
     color: var(--txt3) !important;
     font-family: 'Space Mono', monospace !important;
-    font-size: 0.68rem !important; font-weight: 400 !important;
-    letter-spacing: 0.1em !important; text-transform: uppercase !important;
-    padding: 10px 22px !important;
-    transition: color .2s !important;
+    font-size: 0.65rem !important; font-weight: 400 !important;
+    letter-spacing: 0.12em !important; text-transform: uppercase !important;
+    padding: 10px 22px !important; transition: color .2s !important;
 }
 
 .stTabs [aria-selected="true"] {
@@ -281,103 +279,104 @@ section[data-testid="stSidebar"] { display: none !important; }
 
 .stTabs [data-baseweb="tab-highlight"] { display: none !important; }
 
-/* ── CHAT BUBBLES (pure HTML, no Streamlit avatars) ── */
-.chat-wrap { display: flex; flex-direction: column; gap: 16px; padding: 8px 0; }
+/* ══════════════════════════════
+   CHAT AREA
+══════════════════════════════ */
+.chat-feed {
+    display: flex; flex-direction: column;
+    gap: 20px; padding: 8px 0 16px;
+}
 
-.msg-user {
-    align-self: flex-end;
-    max-width: 78%;
-    background: linear-gradient(135deg,
-        rgba(79,110,247,.14) 0%,
-        rgba(124,58,237,.08) 100%);
-    border: 1px solid rgba(79,110,247,.22);
-    border-radius: 14px 14px 4px 14px;
-    padding: 14px 18px;
+/* user message */
+.msg-u-wrap {
+    display: flex; justify-content: flex-end;
+    animation: faderight .3s ease both;
+}
+
+.msg-u {
+    max-width: 74%;
+    background: var(--user-bg);
+    border: 1px solid var(--user-br);
+    border-radius: 16px 16px 4px 16px;
+    padding: 13px 18px;
     font-family: 'Space Grotesk', sans-serif !important;
     font-size: 0.92rem; line-height: 1.65;
     color: var(--txt) !important;
-    animation: msgslide-right .25s ease both;
 }
 
-.msg-label-user {
+.msg-u-lbl {
+    text-align: right;
     font-family: 'Space Mono', monospace !important;
-    font-size: 0.55rem; letter-spacing: 0.12em;
+    font-size: 0.52rem; letter-spacing: 0.12em;
     color: var(--acc) !important; text-transform: uppercase;
-    text-align: right; margin-bottom: 5px;
+    margin-bottom: 5px;
 }
 
-.msg-bot {
-    align-self: flex-start;
-    max-width: 88%;
-    background: var(--bg1);
-    border: 1px solid var(--b1);
-    border-radius: 4px 14px 14px 14px;
-    padding: 16px 20px;
-    font-family: 'Space Grotesk', sans-serif !important;
-    font-size: 0.92rem; line-height: 1.75;
-    color: var(--txt) !important;
-    animation: msgslide-left .25s ease both;
+/* bot message */
+.msg-b-wrap {
+    display: flex; justify-content: flex-start;
+    animation: fadeleft .3s ease both;
 }
 
-.msg-label-bot {
+.msg-b-inner { max-width: 84%; }
+
+.msg-b-lbl {
     font-family: 'Space Mono', monospace !important;
-    font-size: 0.55rem; letter-spacing: 0.12em;
+    font-size: 0.52rem; letter-spacing: 0.12em;
     color: var(--grn) !important; text-transform: uppercase;
     margin-bottom: 6px;
     display: flex; align-items: center; gap: 6px;
 }
 
-.msg-label-bot::before {
-    content: '';
-    display: inline-block;
+.msg-b-lbl-dot {
     width: 5px; height: 5px; border-radius: 50%;
-    background: var(--grn);
+    background: var(--grn); flex-shrink: 0;
 }
 
-.rmeta {
+.msg-b {
+    background: var(--bot-bg);
+    border: 1px solid var(--bot-br);
+    border-radius: 4px 16px 16px 16px;
+    padding: 15px 20px;
+    font-family: 'Space Grotesk', sans-serif !important;
+    font-size: 0.92rem; line-height: 1.78;
+    color: var(--txt) !important;
+}
+
+.msg-meta {
     display: inline-flex; align-items: center; gap: 8px;
     font-family: 'Space Mono', monospace !important;
-    font-size: 0.58rem; color: var(--txt3) !important;
+    font-size: 0.56rem; color: var(--txt3) !important;
     background: var(--bg); border: 1px solid var(--b0);
-    border-radius: 4px; padding: 3px 10px; margin-top: 10px;
+    border-radius: 4px; padding: 3px 10px; margin-top: 8px;
     letter-spacing: 0.05em;
 }
 
-.rmeta-dot { width:4px; height:4px; border-radius:50%; background:var(--grn); }
-
-@keyframes msgslide-right {
-    from { opacity:0; transform:translateX(12px); }
-    to   { opacity:1; transform:translateX(0); }
+.msg-meta-dot {
+    width: 4px; height: 4px; border-radius: 50%;
+    background: var(--grn);
 }
 
-@keyframes msgslide-left {
-    from { opacity:0; transform:translateX(-12px); }
-    to   { opacity:1; transform:translateX(0); }
-}
-
-/* ── SOURCE CHUNKS ── */
+/* source chunks */
 .schunk {
     background: var(--bg);
-    border: 1px solid var(--b0);
+    border: 1px solid var(--b1);
     border-left: 2px solid var(--acc);
-    border-radius: 6px;
-    padding: 12px 16px; margin: 7px 0;
+    border-radius: 6px; padding: 12px 16px; margin: 7px 0;
 }
 
 .schunk-lbl {
     font-family: 'Space Mono', monospace !important;
-    font-size: 0.52rem; color: var(--acc) !important;
-    text-transform: uppercase; letter-spacing: 0.15em;
-    margin-bottom: 7px;
+    font-size: 0.5rem; color: var(--acc) !important;
+    text-transform: uppercase; letter-spacing: 0.15em; margin-bottom: 7px;
 }
 
 .schunk-txt {
     font-family: 'Space Mono', monospace !important;
-    font-size: 0.68rem; color: var(--txt2) !important;
-    line-height: 1.75;
+    font-size: 0.67rem; color: var(--txt2) !important; line-height: 1.75;
 }
 
-/* ── EMPTY STATE ── */
+/* empty state */
 .empty {
     text-align: center; padding: 5rem 2rem;
     animation: slideup .5s ease both;
@@ -386,32 +385,30 @@ section[data-testid="stSidebar"] { display: none !important; }
 .empty-glyph {
     font-size: 2.5rem; color: var(--b2) !important;
     display: block; margin-bottom: 16px;
-    animation: float 3s ease-in-out infinite;
+    animation: floatit 3s ease-in-out infinite;
 }
 
 .empty-t {
     font-family: 'Space Grotesk', sans-serif !important;
-    font-weight: 600; font-size: 1.05rem;
+    font-weight: 600; font-size: 1rem;
     color: var(--txt3) !important; margin-bottom: 8px;
 }
 
 .empty-s {
     font-family: 'Space Mono', monospace !important;
-    font-size: 0.62rem; color: var(--b2) !important;
+    font-size: 0.6rem; color: var(--b2) !important;
     letter-spacing: 0.05em;
 }
 
-@keyframes float {
-    0%,100% { transform: translateY(0); }
-    50%      { transform: translateY(-10px); }
-}
-
-/* ── CHAT INPUT ── */
+/* ══════════════════════════════
+   CHAT INPUT
+══════════════════════════════ */
 [data-testid="stChatInput"] {
     background: var(--bg1) !important;
     border: 1px solid var(--b2) !important;
     border-radius: 10px !important;
     transition: border-color .2s, box-shadow .2s !important;
+    margin-top: 16px !important;
 }
 
 [data-testid="stChatInput"]:focus-within {
@@ -429,19 +426,18 @@ section[data-testid="stSidebar"] { display: none !important; }
 
 [data-testid="stChatInput"] textarea::placeholder {
     color: var(--txt3) !important;
-    font-family: 'Space Grotesk', sans-serif !important;
 }
 
-/* ── EXPANDER ── */
+/* ══════════════════════════════
+   EXPANDER
+══════════════════════════════ */
 .streamlit-expanderHeader {
     background: var(--bg1) !important;
     border: 1px solid var(--b1) !important;
     border-radius: 6px !important;
     font-family: 'Space Mono', monospace !important;
-    font-size: 0.62rem !important;
-    letter-spacing: 0.08em !important;
-    color: var(--txt3) !important;
-    text-transform: uppercase !important;
+    font-size: 0.6rem !important; letter-spacing: 0.08em !important;
+    color: var(--txt3) !important; text-transform: uppercase !important;
 }
 
 .streamlit-expanderContent {
@@ -450,17 +446,17 @@ section[data-testid="stSidebar"] { display: none !important; }
     border-top: none !important;
 }
 
-/* ── BUTTONS ── */
+/* ══════════════════════════════
+   BUTTONS
+══════════════════════════════ */
 .stButton > button {
     background: var(--bg1) !important;
     border: 1px solid var(--b2) !important;
     color: var(--txt2) !important;
     font-family: 'Space Mono', monospace !important;
-    font-size: 0.65rem !important;
-    letter-spacing: 0.08em !important;
+    font-size: 0.62rem !important; letter-spacing: 0.08em !important;
     text-transform: uppercase !important;
-    border-radius: 6px !important;
-    padding: 8px 20px !important;
+    border-radius: 6px !important; padding: 8px 20px !important;
     transition: all .15s ease !important;
 }
 
@@ -470,7 +466,9 @@ section[data-testid="stSidebar"] { display: none !important; }
     background: rgba(79,110,247,.05) !important;
 }
 
-/* ── FILE UPLOADER ── */
+/* ══════════════════════════════
+   FILE UPLOADER
+══════════════════════════════ */
 [data-testid="stFileUploaderDropzone"] {
     background: var(--bg1) !important;
     border: 1px dashed var(--b2) !important;
@@ -486,18 +484,20 @@ section[data-testid="stSidebar"] { display: none !important; }
 [data-testid="stFileUploaderDropzone"] span,
 [data-testid="stFileUploaderDropzone"] small {
     font-family: 'Space Mono', monospace !important;
-    color: var(--txt3) !important; font-size: 0.68rem !important;
+    color: var(--txt3) !important; font-size: 0.66rem !important;
 }
 
-/* ── ABOUT CARDS ── */
+/* ══════════════════════════════
+   ABOUT CARDS
+══════════════════════════════ */
 .acard {
     background: var(--bg1); border: 1px solid var(--b1);
-    border-radius: 10px; padding: 22px;
-    margin-bottom: 12px; position: relative; overflow: hidden;
-    transition: border-color .2s;
+    border-radius: 10px; padding: 22px; margin-bottom: 12px;
+    position: relative; overflow: hidden;
+    transition: border-color .2s, transform .2s;
 }
 
-.acard:hover { border-color: var(--b2); }
+.acard:hover { border-color: var(--b2); transform: translateY(-2px); }
 
 .acard::after {
     content: '';
@@ -522,15 +522,14 @@ section[data-testid="stSidebar"] { display: none !important; }
 
 .acard-b {
     font-family: 'Space Mono', monospace !important;
-    font-size: 0.65rem; color: var(--txt3) !important;
-    line-height: 2.2;
+    font-size: 0.64rem; color: var(--txt3) !important; line-height: 2.2;
 }
 
 .feat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 
 .feat-item {
     font-family: 'Space Mono', monospace !important;
-    font-size: 0.6rem; color: var(--txt3) !important;
+    font-size: 0.58rem; color: var(--txt3) !important;
     background: var(--bg); border: 1px solid var(--b1);
     border-radius: 6px; padding: 9px 12px;
     display: flex; align-items: center; gap: 8px;
@@ -538,15 +537,16 @@ section[data-testid="stSidebar"] { display: none !important; }
 }
 
 .feat-item:hover { border-color: var(--b2); }
-
 .feat-dot { width:4px; height:4px; border-radius:50%; background:var(--acc); flex-shrink:0; }
 
-/* ── UPLOAD ── */
+/* ══════════════════════════════
+   UPLOAD
+══════════════════════════════ */
 .up-note {
     font-family: 'Space Mono', monospace !important;
-    font-size: 0.6rem; color: var(--txt3) !important;
+    font-size: 0.58rem; color: var(--txt3) !important;
     background: var(--bg); border: 1px solid var(--b1);
-    border-left: 2px solid rgba(79,110,247,.4);
+    border-left: 2px solid rgba(79,110,247,.5);
     border-radius: 0 6px 6px 0;
     padding: 10px 14px; margin-top: 12px; line-height: 1.9;
 }
@@ -558,39 +558,40 @@ section[data-testid="stSidebar"] { display: none !important; }
 
 .up-stats-t {
     font-family: 'Space Mono', monospace !important;
-    font-size: 0.55rem; color: var(--txt3) !important;
-    text-transform: uppercase; letter-spacing: 0.12em;
-    margin-bottom: 12px;
+    font-size: 0.52rem; color: var(--txt3) !important;
+    text-transform: uppercase; letter-spacing: 0.12em; margin-bottom: 12px;
 }
 
 .doc-row {
     display: flex; align-items: center; gap: 8px;
     font-family: 'Space Mono', monospace !important;
-    font-size: 0.62rem; color: var(--grn) !important;
+    font-size: 0.6rem; color: var(--grn) !important;
     padding: 5px 0; border-bottom: 1px solid var(--b0);
 }
 
 .doc-row:last-child { border-bottom: none; }
-
 .doc-dot { width:4px; height:4px; border-radius:50%; background:var(--grn); flex-shrink:0; }
 
 .sess-box {
     font-family: 'Space Mono', monospace !important;
-    font-size: 0.58rem; color: var(--txt3) !important;
+    font-size: 0.56rem; color: var(--txt3) !important;
     margin-top: 14px; padding-top: 12px;
     border-top: 1px solid var(--b0); line-height: 1.9;
 }
 
-/* ── ALERTS ── */
+/* ══════════════════════════════
+   ALERTS + SPINNER
+══════════════════════════════ */
 [data-testid="stAlert"] {
     font-family: 'Space Mono', monospace !important;
-    font-size: 0.7rem !important; border-radius: 6px !important;
+    font-size: 0.68rem !important; border-radius: 6px !important;
 }
 
-/* ── SPINNER ── */
 .stSpinner > div { border-top-color: var(--acc) !important; }
 
-/* ── ANIMATIONS ── */
+/* ══════════════════════════════
+   KEYFRAMES
+══════════════════════════════ */
 @keyframes slidedown {
     from { opacity:0; transform:translateY(-10px); }
     to   { opacity:1; transform:translateY(0); }
@@ -601,21 +602,46 @@ section[data-testid="stSidebar"] { display: none !important; }
     to   { opacity:1; transform:translateY(0); }
 }
 
+@keyframes faderight {
+    from { opacity:0; transform:translateX(14px); }
+    to   { opacity:1; transform:translateX(0); }
+}
+
+@keyframes fadeleft {
+    from { opacity:0; transform:translateX(-14px); }
+    to   { opacity:1; transform:translateX(0); }
+}
+
+@keyframes floatit {
+    0%,100% { transform:translateY(0); }
+    50%      { transform:translateY(-10px); }
+}
+
 </style>
 """, unsafe_allow_html=True)
-
 
 # ------------------------------------------------
 # Session State
 # ------------------------------------------------
 
-if "messages"       not in st.session_state: st.session_state.messages       = []
-if "session_id"     not in st.session_state: st.session_state.session_id     = f"nx_{str(uuid.uuid4())[:8]}"
-if "questions"      not in st.session_state: st.session_state.questions      = 0
-if "time_total"     not in st.session_state: st.session_state.time_total     = 0.0
-if "sources_total"  not in st.session_state: st.session_state.sources_total  = 0
-if "uploaded_docs"  not in st.session_state: st.session_state.uploaded_docs  = []
+if "messages"      not in st.session_state: st.session_state.messages      = []
+if "session_id"    not in st.session_state: st.session_state.session_id    = f"nx_{str(uuid.uuid4())[:8]}"
+if "questions"     not in st.session_state: st.session_state.questions     = 0
+if "time_total"    not in st.session_state: st.session_state.time_total    = 0.0
+if "src_total"     not in st.session_state: st.session_state.src_total     = 0
+if "uploaded_docs" not in st.session_state: st.session_state.uploaded_docs = []
 
+# ------------------------------------------------
+# Helper — safe HTML escape for chat content
+# ------------------------------------------------
+
+def safe(text: str) -> str:
+    """Escape < > & so raw HTML never renders inside chat bubbles."""
+    return (text
+            .replace("&", "&amp;")
+            .replace("<", "&lt;")
+            .replace(">", "&gt;")
+            .replace("\n", "<br>"))
 
 # ------------------------------------------------
 # Top Bar
@@ -624,18 +650,17 @@ if "uploaded_docs"  not in st.session_state: st.session_state.uploaded_docs  = [
 st.markdown(f"""
 <div class="topbar">
     <div class="tb-left">
-        <div class="hex-logo">NX</div>
-        <div class="brand">
+        <div class="hex">NX</div>
+        <div>
             <div class="brand-name">NEXUS</div>
-            <div class="brand-sub">Enterprise Knowledge OS · v2.0</div>
+            <div class="brand-sub">Enterprise Knowledge OS &nbsp;·&nbsp; v2.0</div>
         </div>
     </div>
-    <div class="status-chip">
+    <div class="online-chip">
         <span class="blink"></span>System Online
     </div>
 </div>
 """, unsafe_allow_html=True)
-
 
 # ------------------------------------------------
 # Hero
@@ -643,12 +668,12 @@ st.markdown(f"""
 
 st.markdown("""
 <div class="hero">
-    <div class="hero-tag">// RAG · Vector Search · Guardrails · Session Memory</div>
+    <div class="hero-eye">// RAG · Vector Search · Guardrails · Session Memory</div>
     <div class="hero-h1">Enterprise <span class="hl">Knowledge</span> OS</div>
     <div class="hero-mono">
-        GEMINI-EMBEDDING-001 &nbsp;·&nbsp; PINECONE 3072-DIM &nbsp;·&nbsp; GEMINI 2.5 FLASH
+        GEMINI-EMBEDDING-001 &nbsp;·&nbsp; PINECONE 3072-DIM &nbsp;·&nbsp; GEMINI 2.5 FLASH + GROQ FALLBACK
     </div>
-    <div class="pill-row">
+    <div class="pills">
         <span class="pill">cosine similarity</span>
         <span class="pill">score threshold 0.30</span>
         <span class="pill">top-k retrieval</span>
@@ -658,7 +683,6 @@ st.markdown("""
     </div>
 </div>
 """, unsafe_allow_html=True)
-
 
 # ------------------------------------------------
 # Metrics
@@ -671,10 +695,9 @@ st.markdown(f"""
     <div class="mc"><div class="mv a">{st.session_state.questions}</div><div class="ml">Queries</div></div>
     <div class="mc"><div class="mv b">{len(st.session_state.messages) // 2}</div><div class="ml">Exchanges</div></div>
     <div class="mc"><div class="mv c">{avg:.1f}s</div><div class="ml">Avg Latency</div></div>
-    <div class="mc"><div class="mv d">{st.session_state.sources_total}</div><div class="ml">Chunks Retrieved</div></div>
+    <div class="mc"><div class="mv d">{st.session_state.src_total}</div><div class="ml">Chunks Retrieved</div></div>
 </div>
 """, unsafe_allow_html=True)
-
 
 # ------------------------------------------------
 # Tabs
@@ -689,47 +712,58 @@ tab1, tab2, tab3 = st.tabs(["CHAT", "INGEST", "SYSTEM"])
 
 with tab1:
 
-    # ---- Build pure HTML chat history (no Streamlit chat_message) ----
+    # ── Build pure HTML chat (no st.chat_message, no avatar bugs) ──
     if st.session_state.messages:
-        chat_html = "<div class='chat-wrap'>"
+
+        html = "<div class='chat-feed'>"
 
         for msg in st.session_state.messages:
+
             if msg["role"] == "user":
-                chat_html += f"""
-                <div>
-                    <div class="msg-label-user">You</div>
-                    <div class="msg-user">{msg['content']}</div>
+                html += f"""
+                <div class="msg-u-wrap">
+                    <div>
+                        <div class="msg-u-lbl">You</div>
+                        <div class="msg-u">{safe(msg['content'])}</div>
+                    </div>
                 </div>"""
+
             else:
-                rt  = msg.get("response_time", 0)
-                sc  = msg.get("source_count", 0)
-                meta = ""
+                rt = msg.get("response_time", 0)
+                sc = msg.get("source_count", 0)
+                meta_html = ""
                 if rt:
-                    meta = f"""
-                    <div class="rmeta">
-                        <span class="rmeta-dot"></span>
-                        {rt:.2f}s latency &nbsp;·&nbsp; {sc} chunk{'s' if sc != 1 else ''} retrieved
+                    meta_html = f"""
+                    <div class="msg-meta">
+                        <span class="msg-meta-dot"></span>
+                        {rt:.2f}s &nbsp;·&nbsp; {sc} chunk{'s' if sc != 1 else ''} retrieved
                     </div>"""
-                chat_html += f"""
-                <div>
-                    <div class="msg-label-bot">NEXUS</div>
-                    <div class="msg-bot">{msg['content']}</div>
-                    {meta}
+
+                html += f"""
+                <div class="msg-b-wrap">
+                    <div class="msg-b-inner">
+                        <div class="msg-b-lbl">
+                            <span class="msg-b-lbl-dot"></span>NEXUS
+                        </div>
+                        <div class="msg-b">{safe(msg['content'])}</div>
+                        {meta_html}
+                    </div>
                 </div>"""
 
-        chat_html += "</div>"
-        st.markdown(chat_html, unsafe_allow_html=True)
+        html += "</div>"
+        st.markdown(html, unsafe_allow_html=True)
 
-        # Source expanders (separate from HTML to keep Streamlit interactivity)
+        # Source expanders — Streamlit component (not inside HTML)
         for i, msg in enumerate(st.session_state.messages):
-            srcs = msg.get("sources", [])
-            if msg["role"] == "assistant" and srcs:
-                with st.expander(f"Sources for response {(i // 2) + 1} — {len(srcs)} chunk(s)"):
+            if msg["role"] == "assistant" and msg.get("sources"):
+                srcs = msg["sources"]
+                idx  = (i // 2) + 1
+                with st.expander(f"Sources — Response {idx} ({len(srcs)} chunks)"):
                     for j, src in enumerate(srcs, 1):
                         st.markdown(f"""
                         <div class="schunk">
                             <div class="schunk-lbl">Chunk {j:02d}</div>
-                            <div class="schunk-txt">{src}</div>
+                            <div class="schunk-txt">{safe(src)}</div>
                         </div>
                         """, unsafe_allow_html=True)
 
@@ -740,13 +774,13 @@ with tab1:
             <div class="empty-t">Knowledge base is ready</div>
             <div class="empty-s">
                 Send a query below &nbsp;·&nbsp;
-                Upload documents in INGEST &nbsp;·&nbsp;
-                Session memory active
+                Upload docs in INGEST tab &nbsp;·&nbsp;
+                Session memory is active
             </div>
         </div>
         """, unsafe_allow_html=True)
 
-    # ---- Chat input ALWAYS at bottom ----
+    # ── Chat input — always at bottom ──
     question = st.chat_input("Enter query...")
 
     if question:
@@ -757,10 +791,11 @@ with tab1:
 
         with st.spinner(""):
             try:
-                t0 = time.time()
+                t0  = time.time()
                 res = requests.post(
                     ASK_URL,
-                    json={"question": question, "session_id": st.session_state.session_id},
+                    json={"question": question,
+                          "session_id": st.session_state.session_id},
                     timeout=30
                 )
                 elapsed = time.time() - t0
@@ -769,13 +804,14 @@ with tab1:
                     data    = res.json()
                     answer  = data.get("answer", "No answer returned.")
                     sources = data.get("sources", [])
-                    st.session_state.time_total    += elapsed
-                    st.session_state.sources_total += len(sources)
+                    st.session_state.time_total += elapsed
+                    st.session_state.src_total  += len(sources)
                     st.session_state.messages.append({
-                        "role": "assistant", "content": answer,
-                        "sources": sources,
+                        "role":          "assistant",
+                        "content":       answer,
+                        "sources":       sources,
                         "response_time": elapsed,
-                        "source_count": len(sources)
+                        "source_count":  len(sources)
                     })
                 else:
                     st.session_state.messages.append({
@@ -806,14 +842,14 @@ with tab1:
         st.rerun()
 
     # Clear button
-    col_c, _ = st.columns([1, 7])
+    col_c, _ = st.columns([1, 8])
     with col_c:
         if st.button("Clear Session"):
-            st.session_state.messages      = []
-            st.session_state.questions     = 0
-            st.session_state.time_total    = 0.0
-            st.session_state.sources_total = 0
-            st.session_state.session_id    = f"nx_{str(uuid.uuid4())[:8]}"
+            st.session_state.messages   = []
+            st.session_state.questions  = 0
+            st.session_state.time_total = 0.0
+            st.session_state.src_total  = 0
+            st.session_state.session_id = f"nx_{str(uuid.uuid4())[:8]}"
             st.rerun()
 
 
@@ -826,10 +862,10 @@ with tab2:
     st.markdown("""
     <div style="margin-bottom:20px;">
         <div style="font-family:'Space Grotesk',sans-serif;font-weight:700;
-                    font-size:0.95rem;color:var(--txt);margin-bottom:5px;">
+                    font-size:0.95rem;color:#dde3ff;margin-bottom:5px;">
             Document Ingestion Pipeline
         </div>
-        <div style="font-family:'Space Mono',monospace;font-size:0.62rem;color:var(--txt3);">
+        <div style="font-family:'Space Mono',monospace;font-size:0.6rem;color:#2e3560;">
             PDF &nbsp;·&nbsp; TXT &nbsp;·&nbsp; Max 5MB recommended &nbsp;·&nbsp;
             Chunked at 500 tokens &nbsp;·&nbsp; gemini-embedding-001
         </div>
@@ -851,14 +887,14 @@ with tab2:
 
             if size_mb > 5:
                 st.warning(
-                    f"File is {size_mb:.1f}MB — large files may timeout on free-tier. "
+                    f"File is {size_mb:.1f}MB — may timeout on free-tier. "
                     f"Recommended: keep under 5MB."
                 )
 
             st.markdown(f"""
             <div style="font-family:'Space Mono',monospace;font-size:0.65rem;
-                        color:var(--acc);background:var(--bg1);
-                        border:1px solid var(--b2);border-radius:6px;
+                        color:#4f6ef7;background:#070b15;
+                        border:1px solid #1a2540;border-radius:6px;
                         padding:10px 14px;margin:10px 0;">
                 &#9679;&nbsp; {uploaded_file.name} &nbsp;·&nbsp; {size_kb:.0f} KB
             </div>
@@ -877,7 +913,8 @@ with tab2:
                         if resp.status_code == 200:
                             data = resp.json()
                             st.success(
-                                f"Ingestion complete — {data.get('total_chunks', 0)} chunks indexed"
+                                f"Ingestion complete — "
+                                f"{data.get('total_chunks', 0)} chunks indexed"
                             )
                             if uploaded_file.name not in st.session_state.uploaded_docs:
                                 st.session_state.uploaded_docs.append(uploaded_file.name)
@@ -913,8 +950,11 @@ with tab2:
                     <span class="doc-dot"></span>{d}
                 </div>"""
         else:
-            indexed_html = """<div style="font-family:'Space Mono',monospace;
-                font-size:0.6rem;color:var(--b2);">No documents this session</div>"""
+            indexed_html = """
+            <div style="font-family:'Space Mono',monospace;
+                        font-size:0.6rem;color:#131c35;">
+                No documents this session
+            </div>"""
 
         st.markdown(f"""
         <div class="up-stats">
@@ -922,7 +962,9 @@ with tab2:
             {indexed_html}
             <div class="sess-box">
                 SESSION ID<br>
-                <span style="color:var(--txt3);">{st.session_state.session_id}</span>
+                <span style="color:#2e3560;">
+                    {st.session_state.session_id}
+                </span>
             </div>
         </div>
         """, unsafe_allow_html=True)
@@ -950,7 +992,7 @@ with tab3:
                 CONTEXT ASSEMBLY<br>
                 &darr;&nbsp; join top chunks into prompt<br>
                 LLM GENERATION<br>
-                &darr;&nbsp; gemini-2.5-flash<br>
+                &darr;&nbsp; gemini-2.5-flash (groq fallback)<br>
                 ANSWER + CITATIONS
             </div>
         </div>
@@ -967,8 +1009,8 @@ with tab3:
                 VECTOR DB &nbsp;&nbsp;&nbsp; Pinecone serverless<br>
                 DIMENSIONS &nbsp;&nbsp; 3072 cosine<br>
                 EMBED MODEL &nbsp;&nbsp;gemini-embedding-001<br>
-                LLM &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Gemini 2.5 Flash<br>
-                CHUNKER &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; RecursiveCharacterSplitter<br>
+                LLM PRIMARY &nbsp;&nbsp;Gemini 2.5 Flash<br>
+                LLM FALLBACK &nbsp;Groq llama-3.1-8b<br>
                 SESSION &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {st.session_state.session_id}
             </div>
         </div>
