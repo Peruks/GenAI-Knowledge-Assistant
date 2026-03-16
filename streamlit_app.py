@@ -32,20 +32,21 @@ st.markdown("""
 
 :root {
     --bg:   #030508;
-    --bg1:  #070b15;
-    --bg2:  #0b1020;
-    --b0:   #0c1120;
-    --b1:   #131c35;
-    --b2:   #1a2540;
-    --b3:   #222e50;
-    --txt:  #dde3ff;
-    --txt2: #6b75a0;
-    --txt3: #2e3560;
-    --acc:  #4f6ef7;
-    --acc2: #7c3aed;
-    --grn:  #0ea472;
-    --cyn:  #0891b2;
-    --amb:  #d97706;
+    --bg1:  #08091a;
+    --bg2:  #0c102a;
+    --b0:   #0f1428;
+    --b1:   #161d40;
+    --b2:   #1e2850;
+    --b3:   #263060;
+    --txt:  #f0f2ff;
+    --txt2: #9ba3cc;
+    --txt3: #4a5280;
+    --acc:  #5b7fff;
+    --acc2: #8b50f0;
+    --grn:  #10c880;
+    --cyn:  #0ea5d0;
+    --amb:  #f0a020;
+    --red:  #f05050;
 }
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -59,9 +60,9 @@ html, body, .stApp {
 .stApp {
     background-image:
         radial-gradient(ellipse 70% 40% at 50% -8%,
-            rgba(79,110,247,0.08) 0%, transparent 60%),
-        linear-gradient(rgba(79,110,247,0.018) 1px, transparent 1px),
-        linear-gradient(90deg,rgba(79,110,247,0.018) 1px,transparent 1px) !important;
+            rgba(91,127,255,0.09) 0%, transparent 60%),
+        linear-gradient(rgba(91,127,255,0.022) 1px, transparent 1px),
+        linear-gradient(90deg,rgba(91,127,255,0.022) 1px,transparent 1px) !important;
     background-size: 100% 100%, 48px 48px, 48px 48px !important;
     background-attachment: fixed !important;
 }
@@ -84,7 +85,7 @@ section[data-testid="stSidebar"] { display: none !important; }
 
 .block-container { padding-top: 1.8rem !important; max-width: 1060px !important; }
 
-/* TOPBAR */
+/* ── TOPBAR ── */
 .topbar {
     display: flex; align-items: center; justify-content: space-between;
     padding-bottom: 18px; border-bottom: 1px solid var(--b1);
@@ -110,7 +111,7 @@ section[data-testid="stSidebar"] { display: none !important; }
 }
 .online-chip {
     display: flex; align-items: center; gap: 7px;
-    background: rgba(14,164,114,0.07); border: 1px solid rgba(14,164,114,0.18);
+    background: rgba(16,200,128,0.08); border: 1px solid rgba(16,200,128,0.2);
     border-radius: 99px; padding: 5px 14px;
     font-family: 'Space Mono', monospace !important;
     font-size: 0.58rem; color: var(--grn) !important;
@@ -121,15 +122,15 @@ section[data-testid="stSidebar"] { display: none !important; }
     animation: blinkbeat 2s ease-in-out infinite;
 }
 @keyframes blinkbeat {
-    0%,100% { opacity:1; box-shadow:0 0 0 0 rgba(14,164,114,.5); }
-    50%      { opacity:.5; box-shadow:0 0 0 6px rgba(14,164,114,0); }
+    0%,100% { opacity:1; box-shadow:0 0 0 0 rgba(16,200,128,.6); }
+    50%      { opacity:.5; box-shadow:0 0 0 6px rgba(16,200,128,0); }
 }
 
-/* HERO */
+/* ── HERO ── */
 .hero { text-align: center; padding: 22px 0 18px; animation: slideup .6s ease both; }
 .hero-eye {
     font-family: 'Space Mono', monospace !important;
-    font-size: 0.58rem; letter-spacing: 0.22em; text-transform: uppercase;
+    font-size: 0.6rem; letter-spacing: 0.2em; text-transform: uppercase;
     color: var(--acc) !important; margin-bottom: 12px;
 }
 .hero-h1 {
@@ -138,23 +139,23 @@ section[data-testid="stSidebar"] { display: none !important; }
     line-height: 1.06; color: var(--txt) !important; margin-bottom: 12px;
 }
 .hl {
-    background: linear-gradient(90deg,#6080ff,#a78bfa 55%,#38bdf8);
+    background: linear-gradient(90deg,#7090ff,#b080ff 55%,#50d0ff);
     -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-    background-clip: text; filter: drop-shadow(0 0 28px rgba(96,128,255,.28));
+    background-clip: text; filter: drop-shadow(0 0 28px rgba(112,144,255,.3));
 }
 .hero-mono {
     font-family: 'Space Mono', monospace !important;
-    font-size: 0.62rem; letter-spacing: 0.08em; color: var(--txt3) !important; margin-bottom: 14px;
+    font-size: 0.64rem; letter-spacing: 0.08em; color: var(--txt2) !important; margin-bottom: 14px;
 }
 .pills { display: flex; justify-content: center; flex-wrap: wrap; gap: 6px; }
 .pill {
     font-family: 'Space Mono', monospace !important;
-    font-size: 0.56rem; color: var(--txt3) !important;
+    font-size: 0.58rem; color: var(--txt2) !important;
     background: var(--bg1); border: 1px solid var(--b1);
     border-radius: 4px; padding: 3px 10px; letter-spacing: 0.05em;
 }
 
-/* METRICS */
+/* ── METRICS ── */
 .metrics {
     display: grid; grid-template-columns: repeat(4,1fr);
     gap: 10px; margin: 20px 0; animation: slideup .7s ease both;
@@ -167,19 +168,19 @@ section[data-testid="stSidebar"] { display: none !important; }
 .mc:hover { transform: translateY(-3px); border-color: var(--b2); }
 .mc::before {
     content: ''; position: absolute; top:0; left:0; right:0; height:2px;
-    background: linear-gradient(90deg,transparent,var(--c),transparent); opacity:.8;
+    background: linear-gradient(90deg,transparent,var(--c),transparent); opacity:.9;
 }
-.mc:nth-child(1){--c:#4f6ef7;} .mc:nth-child(2){--c:#0891b2;}
-.mc:nth-child(3){--c:#0ea472;} .mc:nth-child(4){--c:#d97706;}
-.mv { font-family:'Space Grotesk',sans-serif !important; font-weight:700; font-size:1.9rem; line-height:1; }
-.mv.a{color:#4f6ef7 !important;} .mv.b{color:#0891b2 !important;}
-.mv.c{color:#0ea472 !important;} .mv.d{color:#d97706 !important;}
+.mc:nth-child(1){--c:#5b7fff;} .mc:nth-child(2){--c:#0ea5d0;}
+.mc:nth-child(3){--c:#10c880;} .mc:nth-child(4){--c:#f0a020;}
+.mv { font-family:'Space Grotesk',sans-serif !important; font-weight:700; font-size:2rem; line-height:1; }
+.mv.a{color:#7090ff !important;} .mv.b{color:#20c0f0 !important;}
+.mv.c{color:#20e090 !important;} .mv.d{color:#f0b030 !important;}
 .ml {
-    font-family:'Space Mono',monospace !important; font-size:0.52rem;
-    color:var(--txt3) !important; text-transform:uppercase; letter-spacing:0.12em; margin-top:5px;
+    font-family:'Space Mono',monospace !important; font-size:0.54rem;
+    color:var(--txt2) !important; text-transform:uppercase; letter-spacing:0.12em; margin-top:5px;
 }
 
-/* TABS */
+/* ── TABS ── */
 .stTabs [data-baseweb="tab-list"] {
     background:transparent !important; border-bottom:1px solid var(--b1) !important;
     gap:0 !important; margin-bottom:22px !important;
@@ -187,175 +188,203 @@ section[data-testid="stSidebar"] { display: none !important; }
 .stTabs [data-baseweb="tab"] {
     background:transparent !important; border:none !important;
     border-bottom:1px solid transparent !important; color:var(--txt3) !important;
-    font-family:'Space Mono',monospace !important; font-size:0.65rem !important;
+    font-family:'Space Mono',monospace !important; font-size:0.67rem !important;
     font-weight:400 !important; letter-spacing:0.12em !important;
     text-transform:uppercase !important; padding:10px 22px !important; transition:color .2s !important;
 }
-.stTabs [aria-selected="true"] { color:var(--acc) !important; border-bottom:1px solid var(--acc) !important; }
+.stTabs [aria-selected="true"] {
+    color:var(--acc) !important; border-bottom:1px solid var(--acc) !important;
+}
 .stTabs [data-baseweb="tab-highlight"] { display:none !important; }
 
-/* CHAT BUBBLES */
-.chat-feed { display:flex; flex-direction:column; gap:20px; padding:8px 0 16px; }
-
-.msg-u-wrap { display:flex; justify-content:flex-end; animation:faderight .3s ease both; }
-.msg-u-box { max-width:74%; }
+/* ── USER MESSAGE ── */
+.msg-u-wrap {
+    display: flex; justify-content: flex-end;
+    margin: 8px 0; animation: faderight .3s ease both;
+}
+.msg-u-box { max-width: 72%; }
 .msg-u-lbl {
-    text-align:right; font-family:'Space Mono',monospace !important;
-    font-size:0.52rem; letter-spacing:0.12em; color:var(--acc) !important;
-    text-transform:uppercase; margin-bottom:5px;
+    text-align: right;
+    font-family: 'Space Mono', monospace !important;
+    font-size: 0.54rem; letter-spacing: 0.14em;
+    color: var(--acc) !important; text-transform: uppercase; margin-bottom: 5px;
 }
 .msg-u {
-    background:rgba(79,110,247,0.10); border:1px solid rgba(79,110,247,0.25);
-    border-radius:16px 16px 4px 16px; padding:13px 18px;
-    font-family:'Space Grotesk',sans-serif !important;
-    font-size:0.92rem; line-height:1.65; color:var(--txt) !important;
+    background: rgba(91,127,255,0.12);
+    border: 1px solid rgba(91,127,255,0.28);
+    border-radius: 16px 16px 4px 16px;
+    padding: 13px 18px;
+    font-family: 'Space Grotesk', sans-serif !important;
+    font-size: 0.95rem; line-height: 1.65; color: var(--txt) !important;
 }
 
-.msg-b-wrap { display:flex; justify-content:flex-start; animation:fadeleft .3s ease both; }
-.msg-b-box { max-width:84%; }
+/* ── BOT LABEL ── */
 .msg-b-lbl {
-    font-family:'Space Mono',monospace !important; font-size:0.52rem;
-    letter-spacing:0.12em; color:var(--grn) !important; text-transform:uppercase;
-    margin-bottom:6px; display:flex; align-items:center; gap:6px;
+    font-family: 'Space Mono', monospace !important;
+    font-size: 0.54rem; letter-spacing: 0.14em;
+    color: var(--grn) !important; text-transform: uppercase;
+    margin: 8px 0 5px; display: flex; align-items: center; gap: 6px;
+    animation: fadeleft .3s ease both;
 }
-.msg-b-lbl-dot { width:5px; height:5px; border-radius:50%; background:var(--grn); flex-shrink:0; }
-.msg-b {
-    background:#080d1a; border:1px solid var(--b1);
-    border-radius:4px 16px 16px 16px; padding:15px 20px;
-    font-family:'Space Grotesk',sans-serif !important;
-    font-size:0.92rem; line-height:1.78; color:var(--txt) !important;
+.msg-b-lbl-dot {
+    width: 5px; height: 5px; border-radius: 50%;
+    background: var(--grn); flex-shrink: 0;
 }
-.msg-meta {
-    display:inline-flex; align-items:center; gap:8px;
-    font-family:'Space Mono',monospace !important; font-size:0.56rem;
-    color:var(--txt3) !important; background:var(--bg);
-    border:1px solid var(--b0); border-radius:4px; padding:3px 10px;
-    margin-top:8px; letter-spacing:0.05em;
-}
-.msg-meta-dot { width:4px; height:4px; border-radius:50%; background:var(--grn); }
 
-/* SOURCE CHUNKS */
+/* ── BOT MESSAGE ── */
+.msg-b-wrap {
+    max-width: 84%; margin: 0 0 4px 0;
+    animation: fadeleft .3s ease both;
+}
+.msg-b {
+    background: var(--bg1);
+    border: 1px solid var(--b1);
+    border-radius: 4px 16px 16px 16px;
+    padding: 15px 20px;
+    font-family: 'Space Grotesk', sans-serif !important;
+    font-size: 0.95rem; line-height: 1.78; color: var(--txt) !important;
+}
+
+/* ── META BADGE ── */
+.msg-meta-wrap { margin: 6px 0 14px 0; animation: fadeleft .3s ease both; }
+.msg-meta {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-family: 'Space Mono', monospace !important;
+    font-size: 0.58rem; color: var(--txt2) !important;
+    background: var(--bg); border: 1px solid var(--b0);
+    border-radius: 4px; padding: 4px 12px;
+    letter-spacing: 0.05em;
+}
+.msg-meta-dot { width: 4px; height: 4px; border-radius: 50%; background: var(--grn); }
+
+/* ── SOURCE CHUNKS ── */
 .schunk {
-    background:var(--bg); border:1px solid var(--b1);
-    border-left:2px solid var(--acc); border-radius:6px; padding:12px 16px; margin:7px 0;
+    background: var(--bg); border: 1px solid var(--b1);
+    border-left: 2px solid var(--acc); border-radius: 6px;
+    padding: 12px 16px; margin: 7px 0;
 }
 .schunk-lbl {
-    font-family:'Space Mono',monospace !important; font-size:0.5rem;
-    color:var(--acc) !important; text-transform:uppercase; letter-spacing:0.15em; margin-bottom:7px;
+    font-family: 'Space Mono', monospace !important;
+    font-size: 0.52rem; color: var(--acc) !important;
+    text-transform: uppercase; letter-spacing: 0.15em; margin-bottom: 7px;
 }
 .schunk-txt {
-    font-family:'Space Mono',monospace !important; font-size:0.67rem;
-    color:var(--txt2) !important; line-height:1.75;
+    font-family: 'Space Mono', monospace !important;
+    font-size: 0.7rem; color: var(--txt2) !important; line-height: 1.75;
 }
 
-/* EMPTY STATE */
-.empty { text-align:center; padding:5rem 2rem; animation:slideup .5s ease both; }
+/* ── EMPTY STATE ── */
+.empty { text-align: center; padding: 5rem 2rem; animation: slideup .5s ease both; }
 .empty-glyph {
-    font-size:2.5rem; color:var(--b2) !important; display:block; margin-bottom:16px;
-    animation:floatit 3s ease-in-out infinite;
+    font-size: 2.5rem; color: var(--b2) !important;
+    display: block; margin-bottom: 16px;
+    animation: floatit 3s ease-in-out infinite;
 }
 .empty-t {
-    font-family:'Space Grotesk',sans-serif !important; font-weight:600;
-    font-size:1rem; color:var(--txt3) !important; margin-bottom:8px;
+    font-family: 'Space Grotesk', sans-serif !important;
+    font-weight: 600; font-size: 1rem; color: var(--txt3) !important; margin-bottom: 8px;
 }
 .empty-s {
-    font-family:'Space Mono',monospace !important; font-size:0.6rem;
-    color:var(--b2) !important; letter-spacing:0.05em;
+    font-family: 'Space Mono', monospace !important;
+    font-size: 0.62rem; color: var(--b2) !important; letter-spacing: 0.05em;
 }
 
-/* CHAT INPUT */
+/* ── CHAT INPUT ── */
 [data-testid="stChatInput"] {
-    background:var(--bg1) !important; border:1px solid var(--b2) !important;
-    border-radius:10px !important; transition:border-color .2s,box-shadow .2s !important;
-    margin-top:16px !important;
+    background: var(--bg1) !important; border: 1px solid var(--b2) !important;
+    border-radius: 10px !important; transition: border-color .2s, box-shadow .2s !important;
+    margin-top: 16px !important;
 }
 [data-testid="stChatInput"]:focus-within {
-    border-color:var(--acc) !important; box-shadow:0 0 0 3px rgba(79,110,247,.08) !important;
+    border-color: var(--acc) !important; box-shadow: 0 0 0 3px rgba(91,127,255,.1) !important;
 }
 [data-testid="stChatInput"] textarea {
-    background:transparent !important; color:var(--txt) !important;
-    font-family:'Space Grotesk',sans-serif !important; font-size:0.9rem !important;
-    caret-color:var(--acc) !important;
+    background: transparent !important; color: var(--txt) !important;
+    font-family: 'Space Grotesk', sans-serif !important;
+    font-size: 0.9rem !important; caret-color: var(--acc) !important;
 }
-[data-testid="stChatInput"] textarea::placeholder { color:var(--txt3) !important; }
+[data-testid="stChatInput"] textarea::placeholder { color: var(--txt3) !important; }
 
-/* EXPANDER */
+/* ── EXPANDER ── */
 .streamlit-expanderHeader {
-    background:var(--bg1) !important; border:1px solid var(--b1) !important;
-    border-radius:6px !important; font-family:'Space Mono',monospace !important;
-    font-size:0.6rem !important; letter-spacing:0.08em !important;
-    color:var(--txt3) !important; text-transform:uppercase !important;
+    background: var(--bg1) !important; border: 1px solid var(--b1) !important;
+    border-radius: 6px !important; font-family: 'Space Mono', monospace !important;
+    font-size: 0.62rem !important; letter-spacing: 0.08em !important;
+    color: var(--txt2) !important; text-transform: uppercase !important;
 }
 .streamlit-expanderContent {
-    background:var(--bg) !important; border:1px solid var(--b1) !important; border-top:none !important;
+    background: var(--bg) !important; border: 1px solid var(--b1) !important; border-top: none !important;
 }
 
-/* BUTTONS */
+/* ── BUTTONS ── */
 .stButton > button {
-    background:var(--bg1) !important; border:1px solid var(--b2) !important;
-    color:var(--txt2) !important; font-family:'Space Mono',monospace !important;
-    font-size:0.62rem !important; letter-spacing:0.08em !important;
-    text-transform:uppercase !important; border-radius:6px !important;
-    padding:8px 20px !important; transition:all .15s ease !important;
+    background: var(--bg1) !important; border: 1px solid var(--b2) !important;
+    color: var(--txt2) !important; font-family: 'Space Mono', monospace !important;
+    font-size: 0.64rem !important; letter-spacing: 0.08em !important;
+    text-transform: uppercase !important; border-radius: 6px !important;
+    padding: 8px 20px !important; transition: all .15s ease !important;
 }
 .stButton > button:hover {
-    border-color:var(--acc) !important; color:var(--acc) !important;
-    background:rgba(79,110,247,.05) !important;
+    border-color: var(--acc) !important; color: var(--acc) !important;
+    background: rgba(91,127,255,.06) !important;
 }
 
-/* FILE UPLOADER */
+/* ── FILE UPLOADER ── */
 [data-testid="stFileUploaderDropzone"] {
-    background:var(--bg1) !important; border:1px dashed var(--b2) !important;
-    border-radius:10px !important; transition:border-color .2s !important;
+    background: var(--bg1) !important; border: 1px dashed var(--b2) !important;
+    border-radius: 10px !important; transition: border-color .2s !important;
 }
-[data-testid="stFileUploaderDropzone"]:hover { border-color:var(--acc) !important; }
+[data-testid="stFileUploaderDropzone"]:hover { border-color: var(--acc) !important; }
 [data-testid="stFileUploaderDropzone"] p,
 [data-testid="stFileUploaderDropzone"] span,
 [data-testid="stFileUploaderDropzone"] small {
-    font-family:'Space Mono',monospace !important; color:var(--txt3) !important; font-size:0.66rem !important;
+    font-family: 'Space Mono', monospace !important;
+    color: var(--txt2) !important; font-size: 0.68rem !important;
 }
 
-/* ABOUT CARDS */
+/* ── ABOUT CARDS ── */
 .acard {
-    background:var(--bg1); border:1px solid var(--b1); border-radius:10px;
-    padding:22px; margin-bottom:12px; position:relative; overflow:hidden;
-    transition:border-color .2s,transform .2s;
+    background: var(--bg1); border: 1px solid var(--b1); border-radius: 10px;
+    padding: 22px; margin-bottom: 12px; position: relative; overflow: hidden;
+    transition: border-color .2s, transform .2s;
 }
-.acard:hover { border-color:var(--b2); transform:translateY(-2px); }
+.acard:hover { border-color: var(--b2); transform: translateY(-2px); }
 .acard::after {
-    content:''; position:absolute; top:0; right:0; width:80px; height:80px;
-    background:radial-gradient(circle,rgba(79,110,247,.05),transparent 70%); pointer-events:none;
+    content: ''; position: absolute; top: 0; right: 0; width: 80px; height: 80px;
+    background: radial-gradient(circle, rgba(91,127,255,.06), transparent 70%);
+    pointer-events: none;
 }
 .acard-t {
-    font-family:'Space Grotesk',sans-serif !important; font-weight:700;
-    font-size:0.85rem; color:var(--txt) !important; margin-bottom:16px;
-    display:flex; align-items:center; gap:8px;
+    font-family: 'Space Grotesk', sans-serif !important; font-weight: 700;
+    font-size: 0.88rem; color: var(--txt) !important; margin-bottom: 16px;
+    display: flex; align-items: center; gap: 8px;
 }
 .acard-t::before {
-    content:''; display:inline-block; width:3px; height:14px;
-    background:var(--acc); border-radius:2px;
+    content: ''; display: inline-block; width: 3px; height: 14px;
+    background: var(--acc); border-radius: 2px;
 }
 .acard-b {
-    font-family:'Space Mono',monospace !important; font-size:0.64rem;
-    color:var(--txt3) !important; line-height:2.2;
+    font-family: 'Space Mono', monospace !important;
+    font-size: 0.66rem; color: var(--txt2) !important; line-height: 2.2;
 }
-.feat-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.feat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .feat-item {
-    font-family:'Space Mono',monospace !important; font-size:0.58rem;
-    color:var(--txt3) !important; background:var(--bg); border:1px solid var(--b1);
-    border-radius:6px; padding:9px 12px; display:flex; align-items:center; gap:8px;
-    transition:border-color .2s;
+    font-family: 'Space Mono', monospace !important; font-size: 0.6rem;
+    color: var(--txt2) !important; background: var(--bg); border: 1px solid var(--b1);
+    border-radius: 6px; padding: 9px 12px; display: flex; align-items: center; gap: 8px;
+    transition: border-color .2s;
 }
-.feat-item:hover { border-color:var(--b2); }
-.feat-dot { width:4px; height:4px; border-radius:50%; background:var(--acc); flex-shrink:0; }
+.feat-item:hover { border-color: var(--b2); }
+.feat-dot { width: 4px; height: 4px; border-radius: 50%; background: var(--acc); flex-shrink: 0; }
 
-/* ALERTS + SPINNER */
+/* ── ALERTS + SPINNER ── */
 [data-testid="stAlert"] {
-    font-family:'Space Mono',monospace !important; font-size:0.68rem !important; border-radius:6px !important;
+    font-family: 'Space Mono', monospace !important;
+    font-size: 0.7rem !important; border-radius: 6px !important;
 }
-.stSpinner > div { border-top-color:var(--acc) !important; }
+.stSpinner > div { border-top-color: var(--acc) !important; }
 
-/* KEYFRAMES */
+/* ── KEYFRAMES ── */
 @keyframes slidedown { from{opacity:0;transform:translateY(-10px)} to{opacity:1;transform:translateY(0)} }
 @keyframes slideup   { from{opacity:0;transform:translateY(10px)}  to{opacity:1;transform:translateY(0)} }
 @keyframes faderight { from{opacity:0;transform:translateX(14px)}  to{opacity:1;transform:translateX(0)} }
@@ -378,8 +407,7 @@ if "uploaded_docs" not in st.session_state: st.session_state.uploaded_docs = []
 
 
 # ------------------------------------------------
-# Helper — extract clean text from source item
-# source can be str OR dict {"text": "...", ...}
+# Helper
 # ------------------------------------------------
 
 def extract_src_text(src) -> str:
@@ -420,7 +448,7 @@ st.markdown("""
     </div>
     <div class="pills">
         <span class="pill">cosine similarity</span>
-        <span class="pill">score threshold 0.30</span>
+        <span class="pill">score 0.30 threshold</span>
         <span class="pill">top-k retrieval</span>
         <span class="pill">chunk size 500</span>
         <span class="pill">guardrail filter</span>
@@ -459,13 +487,24 @@ tab1, tab2, tab3 = st.tabs(["CHAT", "INGEST", "SYSTEM"])
 
 with tab1:
 
-    if st.session_state.messages:
+    if not st.session_state.messages:
+        st.markdown("""
+        <div class="empty">
+            <span class="empty-glyph">&#11041;</span>
+            <div class="empty-t">Knowledge base is ready</div>
+            <div class="empty-s">
+                Send a query below &nbsp;&#183;&nbsp;
+                Upload docs in INGEST &nbsp;&#183;&nbsp;
+                Session memory active
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
 
-        # Build chat HTML — content goes through st.write, not HTML
-        # to avoid ANY raw HTML leaking from LLM responses
+    else:
         for msg in st.session_state.messages:
 
             if msg["role"] == "user":
+                # ── User bubble ──
                 st.markdown(f"""
                 <div class="msg-u-wrap">
                     <div class="msg-u-box">
@@ -476,27 +515,34 @@ with tab1:
                 """, unsafe_allow_html=True)
 
             else:
-                rt = msg.get("response_time", 0)
-                sc = msg.get("source_count", 0)
-                meta = f"""
-                <div class="msg-meta">
-                    <span class="msg-meta-dot"></span>
-                    {rt:.2f}s &nbsp;&middot;&nbsp; {sc} chunk{'s' if sc != 1 else ''} retrieved
-                </div>""" if rt else ""
-
-                st.markdown(f"""
-                <div class="msg-b-wrap">
-                    <div class="msg-b-box">
-                        <div class="msg-b-lbl">
-                            <span class="msg-b-lbl-dot"></span>NEXUS
-                        </div>
-                        <div class="msg-b">{msg['content']}</div>
-                        {meta}
-                    </div>
+                # ── Bot label ── (separate call)
+                st.markdown("""
+                <div class="msg-b-lbl">
+                    <span class="msg-b-lbl-dot"></span>NEXUS
                 </div>
                 """, unsafe_allow_html=True)
 
-                # Sources — Streamlit expander (not inside HTML string)
+                # ── Bot bubble ── (separate call, content never mixed with HTML vars)
+                st.markdown(f"""
+                <div class="msg-b-wrap">
+                    <div class="msg-b">{msg['content']}</div>
+                </div>
+                """, unsafe_allow_html=True)
+
+                # ── Meta badge ── (separate call, only rendered if rt exists)
+                rt = msg.get("response_time", 0)
+                sc = msg.get("source_count", 0)
+                if rt:
+                    st.markdown(f"""
+                    <div class="msg-meta-wrap">
+                        <div class="msg-meta">
+                            <span class="msg-meta-dot"></span>
+                            {rt:.2f}s &nbsp;&#183;&nbsp; {sc} chunk{'s' if sc != 1 else ''} retrieved
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
+
+                # ── Sources expander ── (Streamlit native, never in HTML string)
                 srcs = msg.get("sources", [])
                 if srcs:
                     with st.expander(f"Sources ({len(srcs)} chunks)"):
@@ -509,20 +555,7 @@ with tab1:
                             </div>
                             """, unsafe_allow_html=True)
 
-    else:
-        st.markdown("""
-        <div class="empty">
-            <span class="empty-glyph">&#11041;</span>
-            <div class="empty-t">Knowledge base is ready</div>
-            <div class="empty-s">
-                Send a query below &nbsp;&middot;&nbsp;
-                Upload docs in INGEST &nbsp;&middot;&nbsp;
-                Session memory is active
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-
-    # Chat input — always at bottom
+    # ── Chat input ──
     question = st.chat_input("Enter query...")
 
     if question:
@@ -583,7 +616,7 @@ with tab1:
 
         st.rerun()
 
-    col_c, _ = st.columns([1, 8])
+    col_c, _ = st.columns([1, 9])
     with col_c:
         if st.button("Clear Session"):
             st.session_state.messages   = []
@@ -603,10 +636,10 @@ with tab2:
     st.markdown("""
     <div style="margin-bottom:20px;">
         <div style="font-family:'Space Grotesk',sans-serif;font-weight:700;
-                    font-size:0.95rem;color:#dde3ff;margin-bottom:5px;">
+                    font-size:0.95rem;color:#f0f2ff;margin-bottom:5px;">
             Document Ingestion Pipeline
         </div>
-        <div style="font-family:'Space Mono',monospace;font-size:0.6rem;color:#2e3560;">
+        <div style="font-family:'Space Mono',monospace;font-size:0.62rem;color:#9ba3cc;">
             PDF &nbsp;&#183;&nbsp; TXT &nbsp;&#183;&nbsp; Max 5MB recommended
             &nbsp;&#183;&nbsp; Chunked at 500 tokens &nbsp;&#183;&nbsp; gemini-embedding-001
         </div>
@@ -634,7 +667,7 @@ with tab2:
 
             st.markdown(f"""
             <div style="font-family:'Space Mono',monospace;font-size:0.65rem;
-                        color:#4f6ef7;background:#070b15;border:1px solid #1a2540;
+                        color:#5b7fff;background:#08091a;border:1px solid #1e2850;
                         border-radius:6px;padding:10px 14px;margin:10px 0;">
                 &#9679;&nbsp; {uploaded_file.name} &nbsp;&#183;&nbsp; {size_kb:.0f} KB
             </div>
@@ -674,9 +707,9 @@ with tab2:
                         st.error(f"Error: {str(e)}")
 
         st.markdown("""
-        <div style="font-family:'Space Mono',monospace;font-size:0.58rem;color:#6b75a0;
-                    background:#030508;border:1px solid #131c35;
-                    border-left:2px solid rgba(79,110,247,0.5);
+        <div style="font-family:'Space Mono',monospace;font-size:0.6rem;color:#9ba3cc;
+                    background:#030508;border:1px solid #161d40;
+                    border-left:2px solid rgba(91,127,255,0.5);
                     border-radius:0 6px 6px 0;padding:10px 14px;margin-top:12px;line-height:1.9;">
             Files processed page-by-page via RecursiveCharacterTextSplitter<br>
             (chunk_size=500, overlap=100) &#8212; stays within 512MB free-tier RAM.<br>
@@ -685,13 +718,12 @@ with tab2:
         """, unsafe_allow_html=True)
 
     with col2:
-        # Build indexed docs list using Streamlit native (no HTML string interpolation)
         st.markdown("""
-        <div style="background:#070b15;border:1px solid #131c35;
+        <div style="background:#08091a;border:1px solid #161d40;
                     border-radius:10px;padding:18px;">
-            <div style="font-family:'Space Mono',monospace;font-size:0.52rem;
-                        color:#2e3560;text-transform:uppercase;letter-spacing:0.12em;
-                        margin-bottom:12px;">
+            <div style="font-family:'Space Mono',monospace;font-size:0.54rem;
+                        color:#9ba3cc;text-transform:uppercase;letter-spacing:0.12em;
+                        margin-bottom:14px;">
                 Indexed This Session
             </div>
         </div>
@@ -701,26 +733,27 @@ with tab2:
             for d in st.session_state.uploaded_docs:
                 st.markdown(f"""
                 <div style="display:flex;align-items:center;gap:8px;
-                            font-family:'Space Mono',monospace;font-size:0.6rem;
-                            color:#0ea472;padding:5px 0;border-bottom:1px solid #0c1120;">
-                    <span style="width:4px;height:4px;border-radius:50%;
-                                 background:#0ea472;flex-shrink:0;display:inline-block;">
-                    </span>{d}
+                            font-family:'Space Mono',monospace;font-size:0.62rem;
+                            color:#10c880;padding:5px 0;
+                            border-bottom:1px solid #0f1428;">
+                    <span style="width:5px;height:5px;border-radius:50%;
+                                 background:#10c880;flex-shrink:0;display:inline-block;"></span>
+                    {d}
                 </div>
                 """, unsafe_allow_html=True)
         else:
             st.markdown("""
-            <div style="font-family:'Space Mono',monospace;font-size:0.6rem;color:#131c35;
-                        padding:4px 0;">
+            <div style="font-family:'Space Mono',monospace;font-size:0.62rem;
+                        color:#4a5280;padding:4px 0;">
                 No documents this session
             </div>
             """, unsafe_allow_html=True)
 
         st.markdown(f"""
-        <div style="font-family:'Space Mono',monospace;font-size:0.56rem;color:#2e3560;
-                    margin-top:14px;padding-top:12px;border-top:1px solid #0c1120;line-height:1.9;">
+        <div style="font-family:'Space Mono',monospace;font-size:0.58rem;color:#4a5280;
+                    margin-top:14px;padding-top:12px;border-top:1px solid #0f1428;line-height:2;">
             SESSION ID<br>
-            <span style="color:#2e3560;">{st.session_state.session_id}</span>
+            <span style="color:#9ba3cc;">{st.session_state.session_id}</span>
         </div>
         """, unsafe_allow_html=True)
 
