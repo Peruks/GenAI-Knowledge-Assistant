@@ -18,206 +18,419 @@ st.set_page_config(
 )
 
 # ------------------------------------------------
-# Custom CSS
+# Premium CSS — Deep Navy Editorial Theme
 # ------------------------------------------------
 
 st.markdown("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Syne:wght@400;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,600;1,9..144,300&family=Outfit:wght@300;400;500;600;700&display=swap');
 
+/* ============ RESET & BASE ============ */
 html, body, [class*="css"] {
-    font-family: 'Syne', sans-serif;
-    background-color: #0a0a0f;
-    color: #e8e8f0;
+    font-family: 'Outfit', sans-serif;
+    background-color: #05060f;
+    color: #dde1f0;
 }
 
-.stApp { background: #0a0a0f; }
+.stApp {
+    background: #05060f;
+    background-image:
+        radial-gradient(ellipse 80% 50% at 20% 0%, rgba(99,102,241,0.07) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 40% at 80% 100%, rgba(16,185,129,0.05) 0%, transparent 50%);
+    min-height: 100vh;
+}
 
+/* ============ HIDE DEFAULTS ============ */
 #MainMenu, footer { visibility: hidden; }
 header { visibility: hidden; }
-
-/* Always show sidebar toggle button */
-button[kind="headerNominal"],
-[data-testid="collapsedControl"] {
-    display: block !important;
-    visibility: visible !important;
-    opacity: 1 !important;
-    color: #a78bfa !important;
-}
 .stDeployButton { display: none; }
 
+/* ============ SIDEBAR TOGGLE — ALWAYS VISIBLE ============ */
+[data-testid="collapsedControl"] {
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    position: fixed !important;
+    top: 0.6rem !important;
+    left: 0.6rem !important;
+    z-index: 999999 !important;
+    background: #0d0e1f !important;
+    border: 1px solid #1a1b35 !important;
+    border-radius: 8px !important;
+    padding: 0.3rem !important;
+    color: #818cf8 !important;
+}
+
+/* ============ SIDEBAR ============ */
 section[data-testid="stSidebar"] {
-    background: #0f0f1a !important;
-    border-right: 1px solid #1e1e2e;
+    background: #0a0b1a !important;
+    border-right: 1px solid #131428 !important;
 }
 
 section[data-testid="stSidebar"] * {
-    color: #e8e8f0 !important;
+    color: #dde1f0 !important;
 }
 
-.app-header {
-    padding: 2rem 0 1.5rem 0;
-    border-bottom: 1px solid #1e1e2e;
-    margin-bottom: 2rem;
+section[data-testid="stSidebar"] .stFileUploader {
+    background: #0d0e20 !important;
+    border: 1px dashed #1e2040 !important;
+    border-radius: 10px !important;
 }
 
-.app-title {
-    font-family: 'Syne', sans-serif;
-    font-weight: 800;
-    font-size: 2rem;
-    letter-spacing: -0.03em;
-    background: linear-gradient(135deg, #ffffff 0%, #a78bfa 50%, #60a5fa 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    margin: 0;
-    line-height: 1.1;
+/* ============ SIDEBAR BRAND ============ */
+.sidebar-brand {
+    padding: 1.2rem 0 0.8rem 0;
 }
 
-.app-subtitle {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 0.75rem;
-    color: #4a4a6a;
-    margin-top: 0.4rem;
-    letter-spacing: 0.05em;
+.sidebar-brand-name {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 1.15rem;
+    color: #e0e4ff;
+    letter-spacing: -0.02em;
+}
+
+.sidebar-brand-tag {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    color: #2e3158;
     text-transform: uppercase;
+    letter-spacing: 0.12em;
+    margin-top: 0.25rem;
 }
 
-.status-dot {
-    display: inline-block;
-    width: 7px;
-    height: 7px;
-    border-radius: 50%;
-    background: #22c55e;
-    margin-right: 6px;
-    animation: pulse 2s infinite;
-}
-
-@keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.4; }
+/* ============ METRIC CARDS ============ */
+.metric-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.4rem;
+    margin: 0.4rem 0;
 }
 
 .metric-card {
-    background: #13131f;
-    border: 1px solid #1e1e2e;
+    background: #0d0e20;
+    border: 1px solid #131428;
     border-radius: 10px;
-    padding: 1rem;
-    margin: 0.5rem 0;
+    padding: 0.8rem 0.6rem;
     text-align: center;
+}
+
+.metric-card.full {
+    grid-column: 1 / -1;
 }
 
 .metric-value {
-    font-family: 'Syne', sans-serif;
-    font-weight: 800;
-    font-size: 1.8rem;
-    color: #a78bfa;
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 1.6rem;
+    color: #818cf8;
+    line-height: 1;
 }
+
+.metric-value.green { color: #10b981; }
+.metric-value.blue  { color: #38bdf8; }
 
 .metric-label {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 0.7rem;
-    color: #4a4a6a;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.6rem;
+    color: #2e3158;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
-    margin-top: 0.2rem;
+    letter-spacing: 0.08em;
+    margin-top: 0.3rem;
 }
 
-.source-card {
-    background: #0a0a0f;
-    border: 1px solid #1e1e2e;
-    border-left: 3px solid #6366f1;
+/* ============ UPLOAD SECTION ============ */
+.upload-section-title {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    color: #818cf8;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    margin: 0.8rem 0 0.4rem 0;
+}
+
+.upload-note {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    color: #1e2245;
+    background: #0a0b1a;
+    border: 1px solid #131428;
+    border-left: 2px solid #1e2a5e;
     border-radius: 6px;
-    padding: 0.8rem 1rem;
-    margin: 0.5rem 0;
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 0.78rem;
-    color: #9090b0;
-    line-height: 1.6;
+    padding: 0.6rem 0.8rem;
+    margin-top: 0.5rem;
+    line-height: 1.8;
 }
 
-.response-badge {
-    display: inline-block;
-    font-family: 'IBM Plex Mono', monospace;
+.indexed-doc {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    color: #10b981;
+    margin: 0.15rem 0;
+}
+
+/* ============ POWERED BY ============ */
+.powered-by {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.62rem;
+    color: #1a1d3a;
+    line-height: 2;
+}
+
+.powered-by span {
+    color: #252850;
+}
+
+/* ============ SESSION ID ============ */
+.session-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.62rem;
+    color: #1e2245;
+    line-height: 1.8;
+}
+
+.session-value {
+    color: #2a2f5e;
+    word-break: break-all;
+}
+
+/* ============ DIVIDER ============ */
+.sidebar-divider {
+    border: none;
+    border-top: 1px solid #0f1025;
+    margin: 0.8rem 0;
+}
+
+/* ============ MAIN HEADER ============ */
+.app-header {
+    padding: 2.5rem 0 2rem 0;
+    border-bottom: 1px solid #0f1025;
+    margin-bottom: 2rem;
+    position: relative;
+}
+
+.app-header-eyebrow {
+    font-family: 'DM Mono', monospace;
     font-size: 0.68rem;
-    color: #4a4a6a;
-    background: #0f0f1a;
-    border: 1px solid #1e1e2e;
-    border-radius: 20px;
-    padding: 0.2rem 0.7rem;
-    margin-top: 0.5rem;
+    color: #818cf8;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    margin-bottom: 0.6rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
 }
 
-.upload-info {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 0.7rem;
-    color: #3a3a5a;
-    background: #0f0f1a;
-    border: 1px solid #1e1e2e;
-    border-radius: 8px;
-    padding: 0.8rem;
-    margin-top: 0.5rem;
-    line-height: 1.7;
+.app-title {
+    font-family: 'Fraunces', serif;
+    font-weight: 300;
+    font-style: italic;
+    font-size: 2.8rem;
+    letter-spacing: -0.04em;
+    color: #e8eaff;
+    margin: 0;
+    line-height: 1.05;
 }
 
+.app-title strong {
+    font-weight: 600;
+    font-style: normal;
+    background: linear-gradient(135deg, #818cf8, #38bdf8);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.app-subtitle {
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.85rem;
+    color: #2e3158;
+    margin-top: 0.8rem;
+    font-weight: 300;
+}
+
+/* ============ STATUS DOT ============ */
+.status-dot {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #10b981;
+    animation: blink 2.5s ease-in-out infinite;
+}
+
+@keyframes blink {
+    0%, 100% { opacity: 1; box-shadow: 0 0 4px #10b981; }
+    50% { opacity: 0.3; box-shadow: none; }
+}
+
+/* ============ EMPTY STATE ============ */
 .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 5rem 2rem;
     text-align: center;
-    padding: 4rem 2rem;
 }
 
-.empty-state-icon { font-size: 3rem; margin-bottom: 1rem; }
+.empty-state-glyph {
+    font-family: 'Fraunces', serif;
+    font-size: 3.5rem;
+    color: #0f1025;
+    margin-bottom: 1.5rem;
+    line-height: 1;
+}
 
-.empty-state-text {
-    font-family: 'Syne', sans-serif;
-    font-size: 1.1rem;
-    color: #3a3a5a;
+.empty-state-title {
+    font-family: 'Fraunces', serif;
+    font-weight: 300;
+    font-style: italic;
+    font-size: 1.4rem;
+    color: #1a1d3a;
+    margin-bottom: 0.5rem;
 }
 
 .empty-state-hint {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 0.75rem;
-    color: #2a2a4a;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.7rem;
+    color: #131428;
+    letter-spacing: 0.05em;
+}
+
+/* ============ CHAT MESSAGES ============ */
+[data-testid="stChatMessage"] {
+    background: transparent !important;
+    border: none !important;
+    padding: 0.3rem 0 !important;
+}
+
+/* ============ RESPONSE BADGE ============ */
+.response-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    color: #1e2245;
+    background: #0a0b1a;
+    border: 1px solid #0f1025;
+    border-radius: 20px;
+    padding: 0.25rem 0.8rem;
     margin-top: 0.5rem;
 }
 
-.stChatInput textarea {
-    background: #13131f !important;
-    color: #e8e8f0 !important;
-    font-family: 'Syne', sans-serif !important;
-    border: 1px solid #1e1e2e !important;
+.badge-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: #10b981;
+    flex-shrink: 0;
 }
 
+/* ============ SOURCE CARD ============ */
+.source-card {
+    background: #080915;
+    border: 1px solid #0f1025;
+    border-left: 2px solid #818cf8;
+    border-radius: 8px;
+    padding: 0.9rem 1.1rem;
+    margin: 0.5rem 0;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.75rem;
+    color: #2a2f5e;
+    line-height: 1.7;
+}
+
+.source-card-label {
+    font-size: 0.6rem;
+    color: #818cf8;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 0.5rem;
+    display: block;
+}
+
+.source-card-text {
+    color: #3a4070;
+}
+
+/* ============ CHAT INPUT ============ */
+[data-testid="stChatInput"] {
+    background: #0a0b1a !important;
+    border: 1px solid #131428 !important;
+    border-radius: 14px !important;
+}
+
+[data-testid="stChatInput"] textarea {
+    background: transparent !important;
+    color: #dde1f0 !important;
+    font-family: 'Outfit', sans-serif !important;
+    font-size: 0.9rem !important;
+}
+
+[data-testid="stChatInput"] textarea::placeholder {
+    color: #1a1d3a !important;
+}
+
+/* ============ EXPANDER ============ */
 .streamlit-expanderHeader {
-    background: #0f0f1a !important;
-    border: 1px solid #1e1e2e !important;
+    background: #0a0b1a !important;
+    border: 1px solid #0f1025 !important;
     border-radius: 8px !important;
-    color: #6366f1 !important;
-    font-family: 'IBM Plex Mono', monospace !important;
-    font-size: 0.75rem !important;
+    color: #2e3158 !important;
+    font-family: 'DM Mono', monospace !important;
+    font-size: 0.7rem !important;
 }
 
 .streamlit-expanderContent {
-    background: #0f0f1a !important;
-    border: 1px solid #1e1e2e !important;
+    background: #080915 !important;
+    border: 1px solid #0f1025 !important;
     border-top: none !important;
+    border-radius: 0 0 8px 8px !important;
 }
 
+/* ============ BUTTONS ============ */
 .stButton > button {
-    background: #13131f !important;
-    border: 1px solid #1e1e2e !important;
-    color: #e8e8f0 !important;
-    font-family: 'Syne', sans-serif !important;
+    background: #0d0e20 !important;
+    border: 1px solid #131428 !important;
+    color: #4a5080 !important;
+    font-family: 'DM Mono', monospace !important;
     border-radius: 8px !important;
-    font-size: 0.85rem !important;
-    transition: all 0.2s !important;
+    font-size: 0.75rem !important;
+    letter-spacing: 0.03em !important;
+    transition: all 0.2s ease !important;
+    padding: 0.5rem 1rem !important;
 }
 
 .stButton > button:hover {
-    border-color: #6366f1 !important;
-    color: #a78bfa !important;
+    border-color: #818cf8 !important;
+    color: #818cf8 !important;
+    background: #0d0e20 !important;
 }
 
-.stSpinner > div { border-top-color: #6366f1 !important; }
+/* ============ FILE UPLOADER ============ */
+[data-testid="stFileUploader"] {
+    background: #0a0b1a !important;
+}
+
+[data-testid="stFileUploaderDropzone"] {
+    background: #0a0b1a !important;
+    border: 1px dashed #131428 !important;
+    border-radius: 10px !important;
+}
+
+/* ============ SUCCESS / ERROR / WARNING ============ */
+[data-testid="stAlert"] {
+    font-family: 'DM Mono', monospace !important;
+    font-size: 0.75rem !important;
+    border-radius: 8px !important;
+}
+
+/* ============ SPINNER ============ */
+.stSpinner > div {
+    border-top-color: #818cf8 !important;
+}
 
 </style>
 """, unsafe_allow_html=True)
@@ -240,7 +453,7 @@ if "sources_found" not in st.session_state:
     st.session_state.sources_found = 0
 
 if "session_id" not in st.session_state:
-    st.session_state.session_id = f"user_{int(time.time())}"
+    st.session_state.session_id = f"sess_{int(time.time())}"
 
 if "uploaded_docs" not in st.session_state:
     st.session_state.uploaded_docs = []
@@ -252,106 +465,113 @@ if "uploaded_docs" not in st.session_state:
 
 with st.sidebar:
 
+    # Brand
     st.markdown("""
-    <div style='padding: 1rem 0 0.5rem 0;'>
-        <div style='font-family: Syne, sans-serif; font-weight: 800; font-size: 1.1rem; color: #e8e8f0;'>
-            ⬡ GenAI Assistant
-        </div>
-        <div style='font-family: IBM Plex Mono, monospace; font-size: 0.7rem; color: #4a4a6a;
-                    text-transform: uppercase; letter-spacing: 0.08em; margin-top: 0.3rem;'>
-            Enterprise Knowledge Base
-        </div>
+    <div class='sidebar-brand'>
+        <div class='sidebar-brand-name'>⬡ GenAI Assistant</div>
+        <div class='sidebar-brand-tag'>Enterprise Knowledge Base</div>
     </div>
-    <hr style='border-color: #1e1e2e; margin: 0.8rem 0;'>
+    <hr class='sidebar-divider'>
     """, unsafe_allow_html=True)
 
-    # ---- Metrics ----
+    # Metrics — row 1
     st.markdown(f"""
-    <div class='metric-card'>
-        <div class='metric-value'>{st.session_state.total_questions}</div>
-        <div class='metric-label'>Questions Asked</div>
-    </div>
-    <div class='metric-card'>
-        <div class='metric-value'>{len(st.session_state.messages) // 2}</div>
-        <div class='metric-label'>Conversations</div>
+    <div class='metric-row'>
+        <div class='metric-card'>
+            <div class='metric-value'>{st.session_state.total_questions}</div>
+            <div class='metric-label'>Questions</div>
+        </div>
+        <div class='metric-card'>
+            <div class='metric-value blue'>{len(st.session_state.messages) // 2}</div>
+            <div class='metric-label'>Exchanges</div>
+        </div>
     </div>
     """, unsafe_allow_html=True)
 
+    # Metrics — row 2 (live after first question)
     if st.session_state.total_questions > 0:
         avg_time = st.session_state.total_time / st.session_state.total_questions
         st.markdown(f"""
-        <div class='metric-card'>
-            <div class='metric-value'>{avg_time:.1f}s</div>
-            <div class='metric-label'>Avg Response Time</div>
-        </div>
-        <div class='metric-card'>
-            <div class='metric-value'>{st.session_state.sources_found}</div>
-            <div class='metric-label'>Sources Retrieved</div>
+        <div class='metric-row'>
+            <div class='metric-card'>
+                <div class='metric-value green'>{avg_time:.1f}s</div>
+                <div class='metric-label'>Avg Time</div>
+            </div>
+            <div class='metric-card'>
+                <div class='metric-value'>{st.session_state.sources_found}</div>
+                <div class='metric-label'>Sources</div>
+            </div>
         </div>
         """, unsafe_allow_html=True)
 
-    st.markdown("<hr style='border-color: #1e1e2e; margin: 1rem 0;'>", unsafe_allow_html=True)
+    st.markdown("<hr class='sidebar-divider'>", unsafe_allow_html=True)
 
-    # ---- Document Upload ----
-    st.markdown("""
-    <div style='font-family: IBM Plex Mono, monospace; font-size: 0.72rem;
-                color: #6366f1; text-transform: uppercase; letter-spacing: 0.08em;
-                margin-bottom: 0.5rem;'>
-        Upload Document
-    </div>
-    """, unsafe_allow_html=True)
+    # Upload section
+    st.markdown("<div class='upload-section-title'>Upload Document</div>", unsafe_allow_html=True)
 
     uploaded_file = st.file_uploader(
-        "Upload PDF or TXT",
+        "Upload",
         type=["pdf", "txt"],
         label_visibility="collapsed"
     )
 
     if uploaded_file:
         if st.button("⬆  Index Document", use_container_width=True):
-            with st.spinner("Indexing document..."):
+            with st.spinner("Indexing..."):
                 try:
-                    files = {"file": (uploaded_file.name, uploaded_file.getvalue(), uploaded_file.type)}
+                    files = {
+                        "file": (
+                            uploaded_file.name,
+                            uploaded_file.getvalue(),
+                            uploaded_file.type
+                        )
+                    }
                     response = requests.post(UPLOAD_URL, files=files, timeout=120)
 
                     if response.status_code == 200:
                         data = response.json()
-                        st.success(f"✅ Indexed {data['total_chunks']} chunks")
-                        st.session_state.uploaded_docs.append(uploaded_file.name)
+                        st.success(f"✅ {data['total_chunks']} chunks indexed")
+                        if uploaded_file.name not in st.session_state.uploaded_docs:
+                            st.session_state.uploaded_docs.append(uploaded_file.name)
                     else:
-                        st.error(f"Upload failed: {response.status_code}")
+                        st.error(f"Failed: {response.status_code}")
 
                 except requests.exceptions.Timeout:
-                    st.warning("⏱ Upload timed out. Large documents take longer — try again.")
+                    st.warning("⏱ Timeout — large docs take longer, try again.")
                 except Exception as e:
                     st.error(f"Error: {str(e)}")
 
-    # Show uploaded docs this session
+    # Indexed docs this session
     if st.session_state.uploaded_docs:
+        docs_html = "".join([
+            f"<div class='indexed-doc'>✓ {d}</div>"
+            for d in st.session_state.uploaded_docs
+        ])
         st.markdown(f"""
-        <div style='font-family: IBM Plex Mono, monospace; font-size: 0.68rem;
-                    color: #3a3a5a; margin-top: 0.5rem;'>
-            INDEXED THIS SESSION<br>
-            {'<br>'.join([f"<span style='color:#4a4a6a;'>✓ {d}</span>" for d in st.session_state.uploaded_docs])}
+        <div style='margin-top: 0.5rem;'>
+            <div style='font-family: DM Mono, monospace; font-size: 0.6rem;
+                        color: #1a1d3a; text-transform: uppercase;
+                        letter-spacing: 0.1em; margin-bottom: 0.3rem;'>
+                Indexed this session
+            </div>
+            {docs_html}
         </div>
         """, unsafe_allow_html=True)
 
-    # Upload info note
     st.markdown("""
-    <div class='upload-info'>
-        Large documents are processed<br>
-        incrementally (page-by-page) to<br>
-        stay stable within free-tier limits.
+    <div class='upload-note'>
+        Large files processed page-by-page<br>
+        to stay within free-tier memory limits.
     </div>
     """, unsafe_allow_html=True)
 
-    st.markdown("<hr style='border-color: #1e1e2e; margin: 1rem 0;'>", unsafe_allow_html=True)
+    st.markdown("<hr class='sidebar-divider'>", unsafe_allow_html=True)
 
-    # ---- Session ----
+    # Session ID
     st.markdown(f"""
-    <div style='font-family: IBM Plex Mono, monospace; font-size: 0.7rem; color: #3a3a5a;'>
-        SESSION<br>
-        <span style='color: #4a4a6a;'>{st.session_state.session_id}</span>
+    <div class='session-label'>
+        SESSION ID<br>
+        <span class='session-value'>{st.session_state.session_id}</span>
     </div>
     """, unsafe_allow_html=True)
 
@@ -362,19 +582,19 @@ with st.sidebar:
         st.session_state.total_questions = 0
         st.session_state.total_time = 0.0
         st.session_state.sources_found = 0
-        st.session_state.session_id = f"user_{int(time.time())}"
+        st.session_state.session_id = f"sess_{int(time.time())}"
         st.rerun()
 
-    st.markdown("<hr style='border-color: #1e1e2e; margin: 1rem 0;'>", unsafe_allow_html=True)
+    st.markdown("<hr class='sidebar-divider'>", unsafe_allow_html=True)
 
-    # ---- Powered by ----
+    # Powered by
     st.markdown("""
-    <div style='font-family: IBM Plex Mono, monospace; font-size: 0.68rem; color: #2a2a4a; line-height: 1.8;'>
+    <div class='powered-by'>
         POWERED BY<br>
-        <span style='color: #3a3a6a;'>Render — Backend API</span><br>
-        <span style='color: #3a3a6a;'>Streamlit Cloud — Frontend</span><br>
-        <span style='color: #3a3a6a;'>Pinecone — Vector DB</span><br>
-        <span style='color: #3a3a6a;'>Gemini Embedding 001</span>
+        <span>Railway — Backend API</span><br>
+        <span>Streamlit Cloud — Frontend</span><br>
+        <span>Pinecone — Vector DB</span><br>
+        <span>Gemini Embedding 001</span>
     </div>
     """, unsafe_allow_html=True)
 
@@ -385,9 +605,14 @@ with st.sidebar:
 
 st.markdown("""
 <div class='app-header'>
-    <h1 class='app-title'>Enterprise Knowledge Assistant</h1>
+    <div class='app-header-eyebrow'>
+        <span class='status-dot'></span>
+        Live · RAG Pipeline Active
+    </div>
+    <h1 class='app-title'>Enterprise <strong>Knowledge</strong></h1>
+    <h1 class='app-title'>Assistant</h1>
     <div class='app-subtitle'>
-        <span class='status-dot'></span>RAG Pipeline · Vector Search · Guardrails
+        Vector Search · Guardrails · Conversational Memory · Document Upload
     </div>
 </div>
 """, unsafe_allow_html=True)
@@ -400,10 +625,10 @@ st.markdown("""
 if not st.session_state.messages:
     st.markdown("""
     <div class='empty-state'>
-        <div class='empty-state-icon'>◈</div>
-        <div class='empty-state-text'>Ask anything about company policies</div>
+        <div class='empty-state-glyph'>◈</div>
+        <div class='empty-state-title'>Nothing yet — ask something</div>
         <div class='empty-state-hint'>
-            Upload a document from the sidebar or ask about existing knowledge base
+            Query the knowledge base · Upload a document · Start a conversation
         </div>
     </div>
     """, unsafe_allow_html=True)
@@ -413,31 +638,33 @@ else:
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
 
-            if message["role"] == "assistant" and message.get("response_time"):
-                st.markdown(f"""
-                <div class='response-badge'>
-                    ⚡ {message['response_time']:.2f}s response
-                    &nbsp;·&nbsp;
-                    📎 {message.get('source_count', 0)} sources
-                </div>
-                """, unsafe_allow_html=True)
+            if message["role"] == "assistant":
+                rt = message.get("response_time", 0)
+                sc = message.get("source_count", 0)
+                if rt:
+                    st.markdown(f"""
+                    <div class='response-badge'>
+                        <span class='badge-dot'></span>
+                        {rt:.2f}s &nbsp;·&nbsp; {sc} source{'s' if sc != 1 else ''}
+                    </div>
+                    """, unsafe_allow_html=True)
 
-            if message["role"] == "assistant" and message.get("sources"):
-                with st.expander(f"📎 {len(message['sources'])} source(s) retrieved"):
-                    for i, src in enumerate(message["sources"], 1):
-                        st.markdown(f"""
-                        <div class='source-card'>
-                            <span style='color: #6366f1; font-weight: 500;'>chunk_{i:02d}</span><br><br>
-                            {src}
-                        </div>
-                        """, unsafe_allow_html=True)
+                if message.get("sources"):
+                    with st.expander(f"📎 {len(message['sources'])} source(s)"):
+                        for i, src in enumerate(message["sources"], 1):
+                            st.markdown(f"""
+                            <div class='source-card'>
+                                <span class='source-card-label'>chunk · {i:02d}</span>
+                                <div class='source-card-text'>{src}</div>
+                            </div>
+                            """, unsafe_allow_html=True)
 
 
 # ------------------------------------------------
 # Chat Input
 # ------------------------------------------------
 
-question = st.chat_input("Ask about company policies, procedures, or uploaded documents...")
+question = st.chat_input("Ask about policies, procedures, or uploaded documents...")
 
 if question:
 
@@ -453,7 +680,7 @@ if question:
         st.markdown(question)
 
     with st.chat_message("assistant"):
-        with st.spinner("Searching knowledge base..."):
+        with st.spinner(""):
             try:
                 start_time = time.time()
 
@@ -462,7 +689,11 @@ if question:
                     "session_id": st.session_state.session_id
                 }
 
-                response = requests.post(ASK_URL, json=payload, timeout=30)
+                response = requests.post(
+                    ASK_URL,
+                    json=payload,
+                    timeout=30
+                )
 
                 elapsed = time.time() - start_time
 
@@ -478,19 +709,18 @@ if question:
 
                     st.markdown(f"""
                     <div class='response-badge'>
-                        ⚡ {elapsed:.2f}s response
-                        &nbsp;·&nbsp;
-                        📎 {len(sources)} sources
+                        <span class='badge-dot'></span>
+                        {elapsed:.2f}s &nbsp;·&nbsp; {len(sources)} source{'s' if len(sources) != 1 else ''}
                     </div>
                     """, unsafe_allow_html=True)
 
                     if sources:
-                        with st.expander(f"📎 {len(sources)} source(s) retrieved"):
+                        with st.expander(f"📎 {len(sources)} source(s)"):
                             for i, src in enumerate(sources, 1):
                                 st.markdown(f"""
                                 <div class='source-card'>
-                                    <span style='color: #6366f1; font-weight: 500;'>chunk_{i:02d}</span><br><br>
-                                    {src}
+                                    <span class='source-card-label'>chunk · {i:02d}</span>
+                                    <div class='source-card-text'>{src}</div>
                                 </div>
                                 """, unsafe_allow_html=True)
 
@@ -503,18 +733,18 @@ if question:
                     })
 
                 else:
-                    error_msg = f"API returned status {response.status_code}. Please try again."
-                    st.error(error_msg)
+                    msg = f"API returned {response.status_code}. Please try again."
+                    st.error(msg)
                     st.session_state.messages.append({
                         "role": "assistant",
-                        "content": error_msg,
+                        "content": msg,
                         "sources": [],
                         "response_time": 0,
                         "source_count": 0
                     })
 
             except requests.exceptions.Timeout:
-                msg = "⏱ Request timed out. The backend may be starting up — please try again."
+                msg = "⏱ Timed out. Backend may be waking up — please try again in a moment."
                 st.warning(msg)
                 st.session_state.messages.append({
                     "role": "assistant",
@@ -525,7 +755,7 @@ if question:
                 })
 
             except requests.exceptions.ConnectionError:
-                msg = "🔌 Could not connect to the backend API. Please check if the server is running."
+                msg = "🔌 Cannot reach the backend. Please check if the server is running."
                 st.error(msg)
                 st.session_state.messages.append({
                     "role": "assistant",
