@@ -3,9 +3,9 @@ uvicorn[standard]
 
 pinecone-client
 
-sentence-transformers
-
 google-generativeai
 
 python-dotenv
 requests
+
+sentence-transformers --no-deps
