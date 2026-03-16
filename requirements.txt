@@ -1,15 +1,15 @@
-fastapi==0.111.0
-uvicorn[standard]==0.30.0
+fastapi
+uvicorn[standard]
 
-pinecone-client==3.2.2
+pinecone-client
 
-sentence-transformers==2.7.0
-torch==2.2.2
+sentence-transformers
+torch==2.1.2
 
-google-generativeai==0.7.2
+google-generativeai
 
-python-dotenv==1.0.1
-requests==2.32.3
+python-dotenv
+requests
 
-langchain==0.2.6
-streamlit==1.36.0
+langchain
+streamlit
