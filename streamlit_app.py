@@ -23,22 +23,17 @@ st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Syne:wght@400;600;700;800&display=swap');
 
-/* ---- Base ---- */
 html, body, [class*="css"] {
     font-family: 'Syne', sans-serif;
     background-color: #0a0a0f;
     color: #e8e8f0;
 }
 
-.stApp {
-    background: #0a0a0f;
-}
+.stApp { background: #0a0a0f; }
 
-/* ---- Hide default streamlit elements ---- */
 #MainMenu, footer, header { visibility: hidden; }
 .stDeployButton { display: none; }
 
-/* ---- Sidebar ---- */
 section[data-testid="stSidebar"] {
     background: #0f0f1a !important;
     border-right: 1px solid #1e1e2e;
@@ -48,7 +43,6 @@ section[data-testid="stSidebar"] * {
     color: #e8e8f0 !important;
 }
 
-/* ---- Header ---- */
 .app-header {
     padding: 2rem 0 1.5rem 0;
     border-bottom: 1px solid #1e1e2e;
@@ -92,87 +86,6 @@ section[data-testid="stSidebar"] * {
     50% { opacity: 0.4; }
 }
 
-/* ---- Chat messages ---- */
-.stChatMessage {
-    background: transparent !important;
-    border: none !important;
-    padding: 0.5rem 0 !important;
-}
-
-/* User message bubble */
-[data-testid="stChatMessage"]:has([data-testid="chatAvatarIcon-user"]) {
-    flex-direction: row-reverse;
-}
-
-/* ---- Message content cards ---- */
-.user-bubble {
-    background: linear-gradient(135deg, #4f46e5, #7c3aed);
-    border-radius: 18px 18px 4px 18px;
-    padding: 0.9rem 1.2rem;
-    margin: 0.3rem 0;
-    max-width: 80%;
-    margin-left: auto;
-    font-size: 0.95rem;
-    line-height: 1.6;
-    box-shadow: 0 4px 20px rgba(124, 58, 237, 0.3);
-}
-
-.assistant-bubble {
-    background: #13131f;
-    border: 1px solid #1e1e2e;
-    border-radius: 18px 18px 18px 4px;
-    padding: 0.9rem 1.2rem;
-    margin: 0.3rem 0;
-    max-width: 85%;
-    font-size: 0.95rem;
-    line-height: 1.7;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
-}
-
-/* ---- Chat input ---- */
-.stChatInput {
-    background: #13131f !important;
-    border: 1px solid #1e1e2e !important;
-    border-radius: 12px !important;
-}
-
-.stChatInput textarea {
-    background: transparent !important;
-    color: #e8e8f0 !important;
-    font-family: 'Syne', sans-serif !important;
-}
-
-/* ---- Expander (sources) ---- */
-.streamlit-expanderHeader {
-    background: #0f0f1a !important;
-    border: 1px solid #1e1e2e !important;
-    border-radius: 8px !important;
-    color: #6366f1 !important;
-    font-family: 'IBM Plex Mono', monospace !important;
-    font-size: 0.75rem !important;
-}
-
-.streamlit-expanderContent {
-    background: #0f0f1a !important;
-    border: 1px solid #1e1e2e !important;
-    border-top: none !important;
-}
-
-/* ---- Source card ---- */
-.source-card {
-    background: #0a0a0f;
-    border: 1px solid #1e1e2e;
-    border-left: 3px solid #6366f1;
-    border-radius: 6px;
-    padding: 0.8rem 1rem;
-    margin: 0.5rem 0;
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 0.78rem;
-    color: #9090b0;
-    line-height: 1.6;
-}
-
-/* ---- Metrics in sidebar ---- */
 .metric-card {
     background: #13131f;
     border: 1px solid #1e1e2e;
@@ -198,24 +111,37 @@ section[data-testid="stSidebar"] * {
     margin-top: 0.2rem;
 }
 
-/* ---- Divider ---- */
-.custom-divider {
-    border: none;
-    border-top: 1px solid #1e1e2e;
-    margin: 1rem 0;
+.source-card {
+    background: #0a0a0f;
+    border: 1px solid #1e1e2e;
+    border-left: 3px solid #6366f1;
+    border-radius: 6px;
+    padding: 0.8rem 1rem;
+    margin: 0.5rem 0;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.78rem;
+    color: #9090b0;
+    line-height: 1.6;
 }
 
-/* ---- Empty state ---- */
+.response-badge {
+    display: inline-block;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.68rem;
+    color: #4a4a6a;
+    background: #0f0f1a;
+    border: 1px solid #1e1e2e;
+    border-radius: 20px;
+    padding: 0.2rem 0.7rem;
+    margin-top: 0.5rem;
+}
+
 .empty-state {
     text-align: center;
     padding: 4rem 2rem;
-    color: #2a2a3a;
 }
 
-.empty-state-icon {
-    font-size: 3rem;
-    margin-bottom: 1rem;
-}
+.empty-state-icon { font-size: 3rem; margin-bottom: 1rem; }
 
 .empty-state-text {
     font-family: 'Syne', sans-serif;
@@ -230,12 +156,28 @@ section[data-testid="stSidebar"] * {
     margin-top: 0.5rem;
 }
 
-/* ---- Spinner override ---- */
-.stSpinner > div {
-    border-top-color: #6366f1 !important;
+.stChatInput textarea {
+    background: #13131f !important;
+    color: #e8e8f0 !important;
+    font-family: 'Syne', sans-serif !important;
+    border: 1px solid #1e1e2e !important;
 }
 
-/* ---- Button ---- */
+.streamlit-expanderHeader {
+    background: #0f0f1a !important;
+    border: 1px solid #1e1e2e !important;
+    border-radius: 8px !important;
+    color: #6366f1 !important;
+    font-family: 'IBM Plex Mono', monospace !important;
+    font-size: 0.75rem !important;
+}
+
+.streamlit-expanderContent {
+    background: #0f0f1a !important;
+    border: 1px solid #1e1e2e !important;
+    border-top: none !important;
+}
+
 .stButton > button {
     background: #13131f !important;
     border: 1px solid #1e1e2e !important;
@@ -251,6 +193,8 @@ section[data-testid="stSidebar"] * {
     color: #a78bfa !important;
 }
 
+.stSpinner > div { border-top-color: #6366f1 !important; }
+
 </style>
 """, unsafe_allow_html=True)
 
@@ -264,6 +208,12 @@ if "messages" not in st.session_state:
 
 if "total_questions" not in st.session_state:
     st.session_state.total_questions = 0
+
+if "total_time" not in st.session_state:
+    st.session_state.total_time = 0.0
+
+if "sources_found" not in st.session_state:
+    st.session_state.sources_found = 0
 
 if "session_id" not in st.session_state:
     st.session_state.session_id = f"user_{int(time.time())}"
@@ -280,14 +230,15 @@ with st.sidebar:
         <div style='font-family: Syne, sans-serif; font-weight: 800; font-size: 1.1rem; color: #e8e8f0;'>
             ⬡ GenAI Assistant
         </div>
-        <div style='font-family: IBM Plex Mono, monospace; font-size: 0.7rem; color: #4a4a6a; text-transform: uppercase; letter-spacing: 0.08em; margin-top: 0.3rem;'>
+        <div style='font-family: IBM Plex Mono, monospace; font-size: 0.7rem; color: #4a4a6a;
+                    text-transform: uppercase; letter-spacing: 0.08em; margin-top: 0.3rem;'>
             Enterprise Knowledge Base
         </div>
     </div>
     <hr style='border-color: #1e1e2e; margin: 0.8rem 0;'>
     """, unsafe_allow_html=True)
 
-    # Stats
+    # Core metrics
     st.markdown(f"""
     <div class='metric-card'>
         <div class='metric-value'>{st.session_state.total_questions}</div>
@@ -298,6 +249,20 @@ with st.sidebar:
         <div class='metric-label'>Conversations</div>
     </div>
     """, unsafe_allow_html=True)
+
+    # Live metrics after first question
+    if st.session_state.total_questions > 0:
+        avg_time = st.session_state.total_time / st.session_state.total_questions
+        st.markdown(f"""
+        <div class='metric-card'>
+            <div class='metric-value'>{avg_time:.1f}s</div>
+            <div class='metric-label'>Avg Response Time</div>
+        </div>
+        <div class='metric-card'>
+            <div class='metric-value'>{st.session_state.sources_found}</div>
+            <div class='metric-label'>Sources Retrieved</div>
+        </div>
+        """, unsafe_allow_html=True)
 
     st.markdown("<hr style='border-color: #1e1e2e; margin: 1rem 0;'>", unsafe_allow_html=True)
 
@@ -315,18 +280,21 @@ with st.sidebar:
     if st.button("↺  Clear Conversation", use_container_width=True):
         st.session_state.messages = []
         st.session_state.total_questions = 0
+        st.session_state.total_time = 0.0
+        st.session_state.sources_found = 0
         st.session_state.session_id = f"user_{int(time.time())}"
         st.rerun()
 
     st.markdown("<hr style='border-color: #1e1e2e; margin: 1rem 0;'>", unsafe_allow_html=True)
 
-    # Info
+    # Powered by
     st.markdown("""
     <div style='font-family: IBM Plex Mono, monospace; font-size: 0.68rem; color: #2a2a4a; line-height: 1.8;'>
         POWERED BY<br>
-        <span style='color: #3a3a6a;'>Gemini 2.5 Flash</span><br>
-        <span style='color: #3a3a6a;'>Pinecone Vector DB</span><br>
-        <span style='color: #3a3a6a;'>FastAPI Backend</span>
+        <span style='color: #3a3a6a;'>Render — Backend API</span><br>
+        <span style='color: #3a3a6a;'>Streamlit Cloud — Frontend</span><br>
+        <span style='color: #3a3a6a;'>Pinecone — Vector DB</span><br>
+        <span style='color: #3a3a6a;'>Gemini Embedding 001</span>
     </div>
     """, unsafe_allow_html=True)
 
@@ -339,7 +307,7 @@ st.markdown("""
 <div class='app-header'>
     <h1 class='app-title'>Enterprise Knowledge Assistant</h1>
     <div class='app-subtitle'>
-        <span class='status-dot'></span>RAG Pipeline · Gemini · Pinecone
+        <span class='status-dot'></span>RAG Pipeline · Vector Search · Guardrails
     </div>
 </div>
 """, unsafe_allow_html=True)
@@ -363,7 +331,15 @@ else:
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
 
-            # Show sources for assistant messages
+            if message["role"] == "assistant" and message.get("response_time"):
+                st.markdown(f"""
+                <div class='response-badge'>
+                    ⚡ {message['response_time']:.2f}s response
+                    &nbsp;·&nbsp;
+                    📎 {message.get('source_count', 0)} sources
+                </div>
+                """, unsafe_allow_html=True)
+
             if message["role"] == "assistant" and message.get("sources"):
                 with st.expander(f"📎 {len(message['sources'])} source(s) retrieved"):
                     for i, src in enumerate(message["sources"], 1):
@@ -383,7 +359,6 @@ question = st.chat_input("Ask about company policies, procedures, or documents..
 
 if question:
 
-    # Add user message
     st.session_state.messages.append({
         "role": "user",
         "content": question,
@@ -395,10 +370,11 @@ if question:
     with st.chat_message("user"):
         st.markdown(question)
 
-    # Call API
     with st.chat_message("assistant"):
         with st.spinner("Searching knowledge base..."):
             try:
+                start_time = time.time()
+
                 payload = {
                     "question": question,
                     "session_id": st.session_state.session_id
@@ -410,12 +386,25 @@ if question:
                     timeout=30
                 )
 
+                elapsed = time.time() - start_time
+
                 if response.status_code == 200:
                     data = response.json()
                     answer = data.get("answer", "No answer returned.")
                     sources = data.get("sources", [])
 
+                    st.session_state.total_time += elapsed
+                    st.session_state.sources_found += len(sources)
+
                     st.markdown(answer)
+
+                    st.markdown(f"""
+                    <div class='response-badge'>
+                        ⚡ {elapsed:.2f}s response
+                        &nbsp;·&nbsp;
+                        📎 {len(sources)} sources
+                    </div>
+                    """, unsafe_allow_html=True)
 
                     if sources:
                         with st.expander(f"📎 {len(sources)} source(s) retrieved"):
@@ -430,7 +419,9 @@ if question:
                     st.session_state.messages.append({
                         "role": "assistant",
                         "content": answer,
-                        "sources": sources
+                        "sources": sources,
+                        "response_time": elapsed,
+                        "source_count": len(sources)
                     })
 
                 else:
@@ -439,25 +430,31 @@ if question:
                     st.session_state.messages.append({
                         "role": "assistant",
                         "content": error_msg,
-                        "sources": []
+                        "sources": [],
+                        "response_time": 0,
+                        "source_count": 0
                     })
 
             except requests.exceptions.Timeout:
-                msg = "Request timed out. The backend may be starting up — please try again in a moment."
+                msg = "⏱ Request timed out. The backend may be starting up — please try again in a moment."
                 st.warning(msg)
                 st.session_state.messages.append({
                     "role": "assistant",
                     "content": msg,
-                    "sources": []
+                    "sources": [],
+                    "response_time": 0,
+                    "source_count": 0
                 })
 
             except requests.exceptions.ConnectionError:
-                msg = "Could not connect to the backend API. Please check if the server is running."
+                msg = "🔌 Could not connect to the backend API. Please check if the server is running."
                 st.error(msg)
                 st.session_state.messages.append({
                     "role": "assistant",
                     "content": msg,
-                    "sources": []
+                    "sources": [],
+                    "response_time": 0,
+                    "source_count": 0
                 })
 
             except Exception as e:
@@ -466,5 +463,7 @@ if question:
                 st.session_state.messages.append({
                     "role": "assistant",
                     "content": msg,
-                    "sources": []
+                    "sources": [],
+                    "response_time": 0,
+                    "source_count": 0
                 })
