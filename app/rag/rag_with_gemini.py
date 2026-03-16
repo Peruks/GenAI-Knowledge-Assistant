@@ -1,7 +1,7 @@
 """
 RAG Pipeline with Pinecone + Gemini
 
-Steps:
+Pipeline Steps:
 1. Convert user question into embedding
 2. Retrieve relevant chunks from Pinecone
 3. Build context from retrieved chunks
@@ -14,7 +14,6 @@ from dotenv import load_dotenv
 
 from pinecone import Pinecone
 from sentence_transformers import SentenceTransformer
-
 import google.generativeai as genai
 
 
@@ -36,135 +35,131 @@ INDEX_NAME = "enterprise-rag-index"
 
 genai.configure(api_key=GEMINI_API_KEY)
 
-model = genai.GenerativeModel("gemini-2.5-flash")
+gemini_model = genai.GenerativeModel("gemini-2.5-flash")
 
 
 # ------------------------------------------------
-# 3. Connect to Pinecone
+# 3. Pinecone Connection (Lazy Load)
 # ------------------------------------------------
 
 pinecone_index = None
 
+
 def get_pinecone_index():
+    """
+    Lazy load Pinecone index.
+    This prevents heavy initialization during server startup.
+    """
+
     global pinecone_index
-    
+
     if pinecone_index is None:
-        from pinecone import Pinecone
-        
         pc = Pinecone(api_key=PINECONE_API_KEY)
-        pinecone_index = pc.Index("enterprise-rag-index")
-    
+        pinecone_index = pc.Index(INDEX_NAME)
+
     return pinecone_index
 
 
 # ------------------------------------------------
-# 4. Load Embedding Model
+# 4. Embedding Model (Lazy Load)
 # ------------------------------------------------
 
 embedding_model = None
 
+
 def get_embedding_model():
+    """
+    Lazy load embedding model.
+    Model loads only when the first query arrives.
+    """
+
     global embedding_model
-    
+
     if embedding_model is None:
         print("Loading embedding model...")
         embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
-    
+
     return embedding_model
 
 
 # ------------------------------------------------
-# 5. User Query
+# 5. Main RAG Pipeline Function
 # ------------------------------------------------
 
-query = "What is the refund policy?"
+def ask_rag(question: str):
+    """
+    Main RAG pipeline.
 
+    Input:
+        question (str)
 
-# ------------------------------------------------
-# 6. Convert Query to Embedding
-# ------------------------------------------------
+    Returns:
+        answer (str)
+        sources (list)
+    """
 
-model = get_embedding_model()
+    # ---------------------------------------------
+    # Step 1: Convert question to embedding
+    # ---------------------------------------------
 
-query_embedding = model.encode(query).tolist()
+    model = get_embedding_model()
 
+    query_embedding = model.encode(question).tolist()
 
-# ------------------------------------------------
-# 7. Retrieve Relevant Documents from Pinecone
-# ------------------------------------------------
+    # ---------------------------------------------
+    # Step 2: Retrieve documents from Pinecone
+    # ---------------------------------------------
 
-results = index.query(
-    vector=query_embedding,
-    top_k=3,
-    include_metadata=True
-)
+    index = get_pinecone_index()
 
+    results = index.query(
+        vector=query_embedding,
+        top_k=3,
+        include_metadata=True
+    )
 
-# ------------------------------------------------
-# 8. Build Context from Retrieved Chunks
-# ------------------------------------------------
+    # ---------------------------------------------
+    # Step 3: Build context from retrieved chunks
+    # ---------------------------------------------
 
-context_chunks = []
-sources = []
+    context_chunks = []
+    sources = []
 
-for match in results["matches"]:
-    text = match["metadata"]["text"]
-    context_chunks.append(text)
-    sources.append(text)
+    for match in results["matches"]:
+        text = match["metadata"]["text"]
+        context_chunks.append(text)
+        sources.append(text)
 
-context = "\n".join(context_chunks)
+    context = "\n".join(context_chunks)
 
+    # ---------------------------------------------
+    # Step 4: Build prompt
+    # ---------------------------------------------
 
-# ------------------------------------------------
-# 9. Build Prompt for Gemini
-# ------------------------------------------------
-
-prompt = f"""
-You are an intelligent AI assistant for answering questions using company documents.
-
-Your task is to answer the user's question ONLY using the provided context.
+    prompt = f"""
+You are an intelligent AI assistant answering questions using company documents.
 
 Rules:
-- Use only the information from the context.
-- Do not invent information.
-- If the answer is not present in the context, say:
-  "The information is not available in the provided documents."
-- Provide a clear and concise answer.
-- Mention the relevant source information used.
+- Use ONLY the information in the provided context
+- Do NOT invent information
+- If answer is not present say:
+  "The information is not available in the provided documents"
 
 Context:
 {context}
 
 User Question:
-{query}
+{question}
 
 Answer:
 """
 
+    # ---------------------------------------------
+    # Step 5: Generate answer using Gemini
+    # ---------------------------------------------
 
-# ------------------------------------------------
-# 10. Generate Answer using Gemini
-# ------------------------------------------------
+    response = gemini_model.generate_content(prompt)
 
-response = model.generate_content(prompt)
+    answer = response.text
 
-answer = response.text
-
-
-# ------------------------------------------------
-# 11. Display Result
-# ------------------------------------------------
-
-print("\n==============================")
-print("User Question:")
-print(query)
-
-print("\nGenerated Answer:")
-print(answer)
-
-print("\nSources Used:")
-
-for s in sources:
-    print("-", s)
-
-print("==============================")
+    return answer, sources
