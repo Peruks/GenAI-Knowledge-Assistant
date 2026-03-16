@@ -64,7 +64,9 @@ app = FastAPI(
     description="RAG-based AI assistant with guardrails",
     version="1.0"
 )
-
+@app.get("/")
+def root():
+    return {"message": "GenAI Knowledge Assistant API running"}
 
 # ------------------------------------------------
 # 4. Request Model
