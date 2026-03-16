@@ -7,5 +7,3 @@ google-generativeai
 
 python-dotenv
 requests
-
-sentence-transformers --no-deps
