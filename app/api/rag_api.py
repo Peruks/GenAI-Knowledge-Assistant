@@ -136,7 +136,7 @@ def retrieve_context(question: str):
         score = match["score"]
 
         # Guardrail: only accept relevant chunks
-        if score > 0.55:
+        if score > -1:
             text = match["metadata"]["text"]
             context_chunks.append(text)
             sources.append(text)
