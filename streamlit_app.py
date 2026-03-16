@@ -6,7 +6,7 @@ import time
 # Configuration
 # ------------------------------------------------
 
-API_BASE = "https://genai-knowledge-assistant.onrender.com"
+API_BASE = "https://genai-knowledge-api-production.up.railway.app"
 ASK_URL = f"{API_BASE}/ask"
 UPLOAD_URL = f"{API_BASE}/upload"
 
