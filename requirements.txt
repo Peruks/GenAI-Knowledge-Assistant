@@ -10,3 +10,4 @@ python-dotenv
 requests
 pypdf
 langchain-text-splitters
+groq
