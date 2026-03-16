@@ -5,11 +5,11 @@ RAG Pipeline with Guardrails
 Pipeline:
 User Question
     ↓
-Embedding Model
+Gemini Embedding
     ↓
 Vector Search (Pinecone)
     ↓
-Context Filtering (Guardrail)
+Context Filtering
     ↓
 Gemini LLM
     ↓
@@ -21,9 +21,8 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 from dotenv import load_dotenv
 
-from pinecone import Pinecone
-from sentence_transformers import SentenceTransformer
 import google.generativeai as genai
+from pinecone import Pinecone
 
 
 # ------------------------------------------------
@@ -48,44 +47,30 @@ llm = genai.GenerativeModel("gemini-2.5-flash")
 
 
 # ------------------------------------------------
-# 3. Lazy Load Pinecone
+# 3. Pinecone Connection
 # ------------------------------------------------
 
-pinecone_index = None
+pc = Pinecone(api_key=PINECONE_API_KEY)
 
-
-def get_pinecone_index():
-    """
-    Lazy load Pinecone index to reduce startup memory usage.
-    """
-    global pinecone_index
-
-    if pinecone_index is None:
-        pc = Pinecone(api_key=PINECONE_API_KEY)
-        pinecone_index = pc.Index(INDEX_NAME)
-
-    return pinecone_index
+index = pc.Index(INDEX_NAME)
 
 
 # ------------------------------------------------
-# 4. Lazy Load Embedding Model
+# 4. Gemini Embedding Function
 # ------------------------------------------------
 
-embedding_model = None
-
-
-def get_embedding_model():
+def get_embedding(text: str):
     """
-    Lazy load embedding model.
-    Prevents heavy torch loading during API startup.
+    Generate embedding using Gemini API
     """
-    global embedding_model
 
-    if embedding_model is None:
-        print("Loading embedding model...")
-        embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
+    result = genai.embed_content(
+        model="models/embedding-001",
+        content=text,
+        task_type="retrieval_query"
+    )
 
-    return embedding_model
+    return result["embedding"]
 
 
 # ------------------------------------------------
@@ -94,7 +79,7 @@ def get_embedding_model():
 
 app = FastAPI(
     title="GenAI Knowledge Assistant",
-    description="RAG-based AI assistant with guardrails",
+    description="RAG based AI assistant with guardrails",
     version="1.0"
 )
 
@@ -114,23 +99,19 @@ class QuestionRequest(BaseModel):
 
 
 # ------------------------------------------------
-# 7. Conversational Memory
+# 7. Conversation Memory
 # ------------------------------------------------
 
 chat_memory = {}
 
 
 # ------------------------------------------------
-# 8. Retrieve Context with Guardrails
+# 8. Retrieve Context
 # ------------------------------------------------
 
-def retrieve_context(question: str):
+def retrieve_context(question):
 
-    model = get_embedding_model()
-
-    query_embedding = model.encode(question).tolist()
-
-    index = get_pinecone_index()
+    query_embedding = get_embedding(question)
 
     results = index.query(
         vector=query_embedding,
@@ -145,9 +126,11 @@ def retrieve_context(question: str):
 
         score = match["score"]
 
-        # Guardrail: only accept relevant chunks
+        # Guardrail filtering
         if score > 0.55:
+
             text = match["metadata"]["text"]
+
             context_chunks.append(text)
             sources.append(text)
 
@@ -169,15 +152,12 @@ def ask_question(request: QuestionRequest):
     question = request.question
     session_id = request.session_id
 
-    # Retrieve chat history
     history = chat_memory.get(session_id, [])
 
     history_text = "\n".join(history)
 
-    # Retrieve context
     context, sources = retrieve_context(question)
 
-    # Guardrail: no relevant context
     if context is None:
 
         return {
@@ -187,16 +167,14 @@ def ask_question(request: QuestionRequest):
             "session_id": session_id
         }
 
-    # Build prompt
     prompt = f"""
 You are an AI assistant answering questions using company documents.
 
 Rules:
-1. Use ONLY the information from the provided context
-2. Do NOT invent information
-3. If the answer is not present say:
-   "The information is not available in the provided documents"
-4. Keep answers concise and clear
+- Use ONLY the information from the context
+- Do NOT invent information
+- If the answer is not present say:
+  "The information is not available in the provided documents"
 
 Conversation History:
 {history_text}
@@ -214,7 +192,6 @@ Answer:
 
     answer = response.text
 
-    # Update conversation memory
     history.append(f"User: {question}")
     history.append(f"Assistant: {answer}")
 
