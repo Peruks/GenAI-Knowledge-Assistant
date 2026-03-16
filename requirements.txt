@@ -1,7 +1,7 @@
 fastapi
 uvicorn[standard]
 
-pinecone-client
+pinecone
 
 google-generativeai
 
