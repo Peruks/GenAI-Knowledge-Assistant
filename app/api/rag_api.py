@@ -1,14 +1,10 @@
 """
 GenAI Knowledge Assistant API
 RAG Pipeline with Guardrails + Document Upload
-
-Endpoints:
-GET  /         - Health check
-POST /ask      - RAG question answering
-POST /upload   - Document upload and indexing
 """
 
 import os
+import gc
 import uuid
 import tempfile
 from fastapi import FastAPI, UploadFile, File, HTTPException
@@ -33,6 +29,9 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
 INDEX_NAME = "enterprise-rag-index"
 
+# Max file size: 20MB
+MAX_FILE_SIZE_MB = 20
+
 
 # ------------------------------------------------
 # 2. Configure Gemini Client
@@ -46,7 +45,6 @@ client = genai.Client(api_key=GEMINI_API_KEY)
 # ------------------------------------------------
 
 pc = Pinecone(api_key=PINECONE_API_KEY)
-
 index = pc.Index(INDEX_NAME)
 
 
@@ -96,7 +94,10 @@ app.add_middleware(
 
 @app.get("/")
 def root():
-    return {"message": "GenAI Knowledge Assistant API running", "version": "2.0"}
+    return {
+        "message": "GenAI Knowledge Assistant API running",
+        "version": "2.0"
+    }
 
 
 # ------------------------------------------------
@@ -134,9 +135,7 @@ def retrieve_context(question: str):
 
     for match in results["matches"]:
         score = match["score"]
-
-        # Guardrail: only accept relevant chunks
-        if score > -1:
+        if score > 0.3:  # Relevance threshold
             text = match["metadata"]["text"]
             context_chunks.append(text)
             sources.append(text)
@@ -212,14 +211,17 @@ Answer:
 
 
 # ------------------------------------------------
-# 12. Upload Endpoint (Memory-Safe)
+# 12. Upload Endpoint — Memory Safe
 # ------------------------------------------------
 
 @app.post("/upload")
 async def upload_document(file: UploadFile = File(...)):
     """
-    Upload and index a PDF or TXT document.
-    Processes page-by-page to stay within 512MB RAM limit.
+    Upload and index PDF or TXT.
+    - Page-by-page processing to stay within 512MB RAM
+    - Batch upsert every 25 vectors
+    - Explicit gc.collect() after each page
+    - 10MB file size limit
     """
 
     # Validate file type
@@ -229,29 +231,47 @@ async def upload_document(file: UploadFile = File(...)):
             detail="Only PDF and TXT files are supported."
         )
 
+    # Read file content
+    content = await file.read()
+
+    # Validate file size
+    file_size_mb = len(content) / (1024 * 1024)
+    if file_size_mb > MAX_FILE_SIZE_MB:
+        raise HTTPException(
+            status_code=413,
+            detail=f"File too large ({file_size_mb:.1f}MB). Maximum allowed is {MAX_FILE_SIZE_MB}MB. "
+                   f"Please compress or split the file."
+        )
+
     total_chunks = 0
     vectors = []
+    tmp_path = None
 
     try:
-        # Save uploaded file to temp location
-        with tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(file.filename)[1]) as tmp:
-            content = await file.read()
+        # Save to temp file
+        suffix = os.path.splitext(file.filename)[1]
+        with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
             tmp.write(content)
             tmp_path = tmp.name
 
+        # Free content from memory
+        del content
+        gc.collect()
+
         # ---- Process PDF ----
         if file.filename.endswith(".pdf"):
+
             reader = PdfReader(tmp_path)
             total_pages = len(reader.pages)
 
-            for page_num, page in enumerate(reader.pages):
+            for page_num in range(total_pages):
 
+                page = reader.pages[page_num]
                 page_text = page.extract_text()
 
                 if not page_text or not page_text.strip():
                     continue
 
-                # Split page into chunks
                 chunks = splitter.split_text(page_text)
 
                 for chunk in chunks:
@@ -260,32 +280,38 @@ async def upload_document(file: UploadFile = File(...)):
 
                     embedding = get_embedding(chunk)
 
-                    vector_id = str(uuid.uuid4())
-
                     vectors.append({
-                        "id": vector_id,
+                        "id": str(uuid.uuid4()),
                         "values": embedding,
                         "metadata": {
                             "text": chunk,
                             "source": file.filename,
                             "page": page_num + 1,
                             "chunk_id": f"{file.filename}_p{page_num + 1}_{total_chunks}"
-                    }
+                        }
                     })
 
                     total_chunks += 1
 
-                    # Batch upsert every 50 vectors to save memory
-                    if len(vectors) >= 50:
+                    # Upsert every 25 vectors to keep memory low
+                    if len(vectors) >= 25:
                         index.upsert(vectors)
                         vectors = []
+                        gc.collect()
+
+                # Free page from memory
+                del page_text, chunks
+                gc.collect()
 
         # ---- Process TXT ----
         elif file.filename.endswith(".txt"):
+
             with open(tmp_path, "r", encoding="utf-8", errors="ignore") as f:
                 text = f.read()
 
             chunks = splitter.split_text(text)
+            del text
+            gc.collect()
 
             for chunk in chunks:
                 if not chunk.strip():
@@ -293,10 +319,8 @@ async def upload_document(file: UploadFile = File(...)):
 
                 embedding = get_embedding(chunk)
 
-                vector_id = str(uuid.uuid4())
-
                 vectors.append({
-                    "id": vector_id,
+                    "id": str(uuid.uuid4()),
                     "values": embedding,
                     "metadata": {
                         "text": chunk,
@@ -308,16 +332,20 @@ async def upload_document(file: UploadFile = File(...)):
 
                 total_chunks += 1
 
-                if len(vectors) >= 50:
+                if len(vectors) >= 25:
                     index.upsert(vectors)
                     vectors = []
+                    gc.collect()
 
         # Upsert remaining vectors
         if vectors:
             index.upsert(vectors)
+            vectors = []
+            gc.collect()
 
-        # Cleanup temp file
-        os.unlink(tmp_path)
+        # Cleanup
+        if tmp_path and os.path.exists(tmp_path):
+            os.unlink(tmp_path)
 
         return {
             "message": "Document indexed successfully.",
@@ -326,7 +354,6 @@ async def upload_document(file: UploadFile = File(...)):
         }
 
     except Exception as e:
-        # Cleanup on error
-        if 'tmp_path' in locals() and os.path.exists(tmp_path):
+        if 'tmp_path' in locals() and tmp_path and os.path.exists(tmp_path):
             os.unlink(tmp_path)
         raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")

@@ -1,7 +1,160 @@
-Company Refund Policy
+ENTERPRISE COMPANY POLICY DOCUMENT
+Version 1.0 | Effective Date: January 2025
 
-Customers can request a refund within 30 days of purchase.
+================================================================
+1. CODE OF CONDUCT
+================================================================
 
-Refunds will be processed within 5 business days.
+1.1 Professional Behavior
+All employees are expected to maintain a high standard of professional behavior at all times. This includes treating colleagues, clients, and partners with respect and dignity. Harassment, discrimination, or bullying of any kind will not be tolerated and may result in immediate termination.
 
-Digital products are not refundable after download.
+1.2 Conflict of Interest
+Employees must disclose any personal or financial interests that may conflict with the interests of the company. This includes outside employment, investments, or relationships with vendors and competitors. Any conflict of interest must be reported to the HR department immediately.
+
+1.3 Confidentiality
+All employees are required to maintain strict confidentiality regarding company information, client data, trade secrets, and proprietary processes. This obligation continues even after employment ends. Sharing confidential information without authorization is grounds for termination and legal action.
+
+================================================================
+2. WORK HOURS AND ATTENDANCE
+================================================================
+
+2.1 Standard Working Hours
+Standard working hours are Monday to Friday, 9:00 AM to 6:00 PM local time. Employees are expected to be present and available during these hours unless otherwise agreed upon with their manager.
+
+2.2 Remote Work Policy
+Employees may work remotely up to 3 days per week with manager approval. Remote workers must maintain the same availability and productivity standards as in-office employees. A stable internet connection and a professional work environment are required.
+
+2.3 Leave Policy
+Each employee is entitled to 20 days of paid annual leave per year. Leave requests must be submitted at least 2 weeks in advance through the HR portal. Unused leave can be carried forward up to a maximum of 10 days to the following year.
+
+2.4 Sick Leave
+Employees are entitled to 10 days of paid sick leave per year. A medical certificate is required for absences exceeding 3 consecutive days. Sick leave cannot be carried forward and does not accumulate.
+
+2.5 Public Holidays
+Employees are entitled to all gazetted public holidays in their region. If an employee is required to work on a public holiday, they will receive double pay or a substitute day off.
+
+================================================================
+3. DATA PRIVACY AND SECURITY
+================================================================
+
+3.1 Data Handling
+All customer and employee data must be handled in accordance with applicable data protection laws including GDPR and local regulations. Employees must not access, share, or process personal data beyond what is necessary for their job function.
+
+3.2 Password Policy
+All system passwords must be at least 12 characters long and include a combination of uppercase letters, lowercase letters, numbers, and special characters. Passwords must be changed every 90 days. Sharing passwords is strictly prohibited.
+
+3.3 Device Security
+Company-issued devices must have full disk encryption enabled at all times. Employees must lock their screens when stepping away from their workstation. Personal devices used for work must have the company's mobile device management software installed.
+
+3.4 Data Breach Reporting
+Any suspected data breach or security incident must be reported to the IT security team within 1 hour of discovery. Failure to report a known breach may result in disciplinary action.
+
+================================================================
+4. EXPENSE AND REIMBURSEMENT POLICY
+================================================================
+
+4.1 Business Travel
+All business travel must be pre-approved by the employee's manager and the finance department. Employees should book travel at least 7 days in advance to secure the best rates. Economy class is standard for flights under 6 hours.
+
+4.2 Expense Claims
+Expense claims must be submitted within 30 days of incurring the expense. All claims must be supported by original receipts. Claims without receipts will not be reimbursed. Approved claims are processed within 5 business days.
+
+4.3 Meal Allowances
+Meal allowances during business travel are capped at USD 50 per day. This includes breakfast, lunch, and dinner. Alcohol expenses are not reimbursable under any circumstances.
+
+4.4 Entertainment Expenses
+Client entertainment expenses require prior approval from a department head. The business purpose and names of all attendees must be documented. Entertainment expenses are capped at USD 200 per event.
+
+================================================================
+5. PERFORMANCE AND APPRAISAL
+================================================================
+
+5.1 Performance Reviews
+All employees undergo a formal performance review twice a year — in June and December. Reviews assess performance against agreed objectives, core competencies, and company values.
+
+5.2 Goal Setting
+At the beginning of each quarter, employees and managers must agree on clear, measurable goals aligned with department and company objectives. These goals form the basis of the performance evaluation.
+
+5.3 Performance Improvement Plan
+Employees who consistently fail to meet performance expectations will be placed on a Performance Improvement Plan (PIP). A PIP outlines specific goals, timelines, and support provided. Failure to meet PIP objectives may result in termination.
+
+5.4 Promotions and Salary Reviews
+Promotions and salary increases are determined based on performance review outcomes, market benchmarks, and business needs. Salary reviews occur annually in January.
+
+================================================================
+6. HEALTH AND SAFETY
+================================================================
+
+6.1 Workplace Safety
+The company is committed to providing a safe and healthy work environment. All employees must comply with health and safety regulations and report unsafe conditions immediately to the facilities team.
+
+6.2 Emergency Procedures
+Emergency evacuation routes are posted in all office locations. Employees must familiarize themselves with the nearest exits and assembly points. Fire drills are conducted twice a year.
+
+6.3 Mental Health Support
+The company provides access to an Employee Assistance Program (EAP) which offers free and confidential counseling services. Employees experiencing stress, anxiety, or personal difficulties are encouraged to use this resource.
+
+6.4 Substance Abuse
+The company maintains a zero-tolerance policy for substance abuse in the workplace. Employees found to be under the influence of alcohol or illegal substances during work hours will face immediate disciplinary action.
+
+================================================================
+7. IT AND ACCEPTABLE USE POLICY
+================================================================
+
+7.1 Acceptable Use
+Company IT resources including computers, internet, email, and software are provided for business purposes. Limited personal use is permitted provided it does not interfere with work responsibilities or violate this policy.
+
+7.2 Software Installation
+Employees must not install unauthorized software on company devices. All software must be approved by the IT department. Unlicensed software is strictly prohibited and may expose the company to legal liability.
+
+7.3 Social Media
+Employees must not post content that could harm the company's reputation or disclose confidential information on social media. Employees should clearly state that personal views expressed online are their own and not those of the company.
+
+7.4 Email Usage
+Company email must be used professionally and respectfully. Mass emails to staff require prior approval from HR or Communications. Phishing emails must be reported to the IT security team immediately.
+
+================================================================
+8. RECRUITMENT AND ONBOARDING
+================================================================
+
+8.1 Equal Opportunity
+The company is an equal opportunity employer. All hiring decisions are based on merit, qualifications, and business needs. Discrimination based on age, gender, race, religion, disability, or any other protected characteristic is strictly prohibited.
+
+8.2 Background Checks
+All new hires are subject to background verification including employment history, educational qualifications, and criminal record checks where permitted by law. Offers of employment are conditional on satisfactory results.
+
+8.3 Probation Period
+All new employees serve a probationary period of 3 months. During this period, either party may terminate employment with 1 week's notice. Upon successful completion of probation, the employee transitions to permanent employment.
+
+8.4 Onboarding Program
+New employees participate in a structured onboarding program during their first 2 weeks. This includes orientation sessions, department introductions, system access setup, and review of company policies.
+
+================================================================
+9. TERMINATION POLICY
+================================================================
+
+9.1 Resignation
+Employees who wish to resign must provide written notice to their manager and HR. The notice period is 1 month for regular employees and 3 months for senior and managerial roles.
+
+9.2 Termination by Company
+The company may terminate employment for reasons including but not limited to: poor performance, misconduct, redundancy, or violation of company policy. Termination will be carried out in accordance with applicable employment laws.
+
+9.3 Exit Process
+Upon termination or resignation, employees must return all company property including devices, access cards, and documents. Access to company systems will be revoked on the last working day. A final settlement including outstanding salary and leave encashment will be processed within 30 days.
+
+================================================================
+10. GRIEVANCE POLICY
+================================================================
+
+10.1 Raising a Grievance
+Employees who have a grievance related to their employment should first raise it informally with their direct manager. If the matter is not resolved, a formal grievance can be submitted in writing to the HR department.
+
+10.2 Investigation Process
+All formal grievances will be investigated impartially. The employee will be given an opportunity to present their case. The company aims to resolve grievances within 15 working days of receipt.
+
+10.3 Anti-Retaliation
+The company strictly prohibits retaliation against employees who raise grievances in good faith. Any employee found to have retaliated against a colleague for raising a concern will face disciplinary action.
+
+================================================================
+END OF DOCUMENT
+================================================================
