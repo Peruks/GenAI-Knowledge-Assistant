@@ -43,16 +43,34 @@ model = genai.GenerativeModel("gemini-2.5-flash")
 # 3. Connect to Pinecone
 # ------------------------------------------------
 
-pc = Pinecone(api_key=PINECONE_API_KEY)
+pinecone_index = None
 
-index = pc.Index(INDEX_NAME)
+def get_pinecone_index():
+    global pinecone_index
+    
+    if pinecone_index is None:
+        from pinecone import Pinecone
+        
+        pc = Pinecone(api_key=PINECONE_API_KEY)
+        pinecone_index = pc.Index("enterprise-rag-index")
+    
+    return pinecone_index
 
 
 # ------------------------------------------------
 # 4. Load Embedding Model
 # ------------------------------------------------
 
-embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
+embedding_model = None
+
+def get_embedding_model():
+    global embedding_model
+    
+    if embedding_model is None:
+        print("Loading embedding model...")
+        embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
+    
+    return embedding_model
 
 
 # ------------------------------------------------
@@ -66,7 +84,9 @@ query = "What is the refund policy?"
 # 6. Convert Query to Embedding
 # ------------------------------------------------
 
-query_embedding = embedding_model.encode(query).tolist()
+model = get_embedding_model()
+
+query_embedding = model.encode(query).tolist()
 
 
 # ------------------------------------------------
