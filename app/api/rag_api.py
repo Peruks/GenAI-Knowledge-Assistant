@@ -1,6 +1,6 @@
 """
 Enterprise GenAI Knowledge Assistant
-RAG System v4.0 with:
+RAG System v4.1 with:
 - Gemini embeddings
 - Pinecone vector DB
 - BM25 keyword search (Hybrid Retrieval)
@@ -8,8 +8,9 @@ RAG System v4.0 with:
 - Multi-query retrieval
 - Streaming responses
 - Gemini LLM (primary)
-- Groq fallback (streaming + non-streaming)
+- Groq fallback
 - Document upload
+- RAGAS + TruLens evaluation endpoint
 """
 
 import os
@@ -17,6 +18,7 @@ import gc
 import uuid
 import json
 import tempfile
+import numpy as np
 from dotenv import load_dotenv
 
 from fastapi import FastAPI, UploadFile, File, HTTPException
@@ -30,8 +32,6 @@ from groq import Groq
 
 from pypdf import PdfReader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-
-# BM25 for hybrid retrieval
 from rank_bm25 import BM25Okapi
 
 
@@ -64,7 +64,7 @@ index = pc.Index(INDEX_NAME)
 # FastAPI
 # ------------------------------------------------
 
-app = FastAPI(title="Enterprise GenAI Assistant", version="4.0")
+app = FastAPI(title="Enterprise GenAI Assistant", version="4.1")
 
 app.add_middleware(
     CORSMiddleware,
@@ -94,25 +94,21 @@ chat_memory = {}
 # BM25 in-memory corpus
 # ------------------------------------------------
 
-# Stores all chunks seen during this server session for BM25 search.
-# Gets populated during /upload and pre-warmed at startup from Pinecone.
-bm25_corpus      = []   # list of raw text strings
-bm25_corpus_meta = []   # list of metadata dicts matching each corpus entry
-bm25_index       = None # BM25Okapi instance, rebuilt when corpus changes
+bm25_corpus      = []
+bm25_corpus_meta = []
+bm25_index       = None
 
 
 def rebuild_bm25():
-    """Rebuild BM25 index from current corpus."""
     global bm25_index
     if bm25_corpus:
-        tokenized = [doc.lower().split() for doc in bm25_corpus]
+        tokenized  = [doc.lower().split() for doc in bm25_corpus]
         bm25_index = BM25Okapi(tokenized)
     else:
         bm25_index = None
 
 
 def add_to_bm25(text: str, metadata: dict):
-    """Add a chunk to the BM25 corpus and rebuild index."""
     if text not in bm25_corpus:
         bm25_corpus.append(text)
         bm25_corpus_meta.append(metadata)
@@ -125,35 +121,23 @@ def add_to_bm25(text: str, metadata: dict):
 
 @app.on_event("startup")
 def warmup_bm25():
-    """
-    On startup, fetch existing vectors from Pinecone
-    and populate BM25 corpus so hybrid search works
-    immediately without needing a fresh upload.
-    """
     try:
         stats = index.describe_index_stats()
         total = stats.get("total_vector_count", 0)
-
         if total == 0:
-            print("BM25 warmup: index is empty, skipping.")
+            print("BM25 warmup: index empty.")
             return
-
-        # Fetch a dummy vector to get namespaces
-        # Use list() to get IDs, then fetch metadata
         dummy_vec = [0.0] * 3072
-        results = index.query(
+        results   = index.query(
             vector=dummy_vec,
-            top_k=min(total, 200),   # fetch up to 200 chunks for BM25
+            top_k=min(total, 200),
             include_metadata=True
         )
-
         for match in results.matches:
             text = match.metadata.get("text", "")
             if text:
                 add_to_bm25(text, match.metadata)
-
-        print(f"BM25 warmup complete: {len(bm25_corpus)} chunks loaded.")
-
+        print(f"BM25 warmup: {len(bm25_corpus)} chunks loaded.")
     except Exception as e:
         print(f"BM25 warmup error (non-fatal): {e}")
 
@@ -192,36 +176,28 @@ Return only the queries, one per line, no numbering or bullets.
 Question: {question}
 
 Queries:"""
-
         response = groq_client.chat.completions.create(
             model="llama-3.1-8b-instant",
             messages=[{"role": "user", "content": prompt}],
             max_tokens=150,
             temperature=0.3
         )
-
         text    = response.choices[0].message.content
         queries = [q.strip("- 0123456789.").strip() for q in text.split("\n") if q.strip()]
-        queries.append(question)  # always include original
+        queries.append(question)
         return queries[:4]
-
     except Exception as e:
         print("Query rewrite error:", e)
         return [question]
 
 
 # ------------------------------------------------
-# Hybrid Retrieval — Vector + BM25 + RRF
+# Hybrid Retrieval
 # ------------------------------------------------
 
 def vector_search(query: str, top_k: int = 5):
-    """Pure vector search via Pinecone."""
     embedding = get_embedding(query)
-    results   = index.query(
-        vector=embedding,
-        top_k=top_k,
-        include_metadata=True
-    )
+    results   = index.query(vector=embedding, top_k=top_k, include_metadata=True)
     return [
         {"text": m.metadata.get("text", ""), "metadata": m.metadata, "score": m.score}
         for m in results.matches
@@ -230,114 +206,65 @@ def vector_search(query: str, top_k: int = 5):
 
 
 def bm25_search(query: str, top_k: int = 5):
-    """BM25 keyword search over in-memory corpus."""
     if bm25_index is None or not bm25_corpus:
         return []
-
     tokenized_query = query.lower().split()
     scores          = bm25_index.get_scores(tokenized_query)
-
-    # Get top-k indices sorted by score
-    top_indices = sorted(range(len(scores)), key=lambda i: scores[i], reverse=True)[:top_k]
-
-    results = []
-    for i in top_indices:
-        if scores[i] > 0:  # only include matches with positive score
-            results.append({
-                "text":     bm25_corpus[i],
-                "metadata": bm25_corpus_meta[i],
-                "score":    float(scores[i])
-            })
-
-    return results
-
-
-def reciprocal_rank_fusion(vector_results, bm25_results, k: int = 60):
-    """
-    Merge vector and BM25 results using Reciprocal Rank Fusion.
-    RRF score = sum(1 / (k + rank)) across result lists.
-    Higher RRF score = more relevant.
-    """
-    rrf_scores = {}
-    texts_map  = {}
-
-    # Score vector results
-    for rank, item in enumerate(vector_results):
-        text = item["text"]
-        rrf_scores[text]  = rrf_scores.get(text, 0) + 1 / (k + rank + 1)
-        texts_map[text]   = item["metadata"]
-
-    # Score BM25 results
-    for rank, item in enumerate(bm25_results):
-        text = item["text"]
-        rrf_scores[text]  = rrf_scores.get(text, 0) + 1 / (k + rank + 1)
-        texts_map[text]   = item["metadata"]
-
-    # Sort by combined RRF score descending
-    ranked = sorted(rrf_scores.items(), key=lambda x: x[1], reverse=True)
-
+    top_indices     = sorted(range(len(scores)), key=lambda i: scores[i], reverse=True)[:top_k]
     return [
-        {"text": text, "metadata": texts_map[text], "rrf_score": score}
-        for text, score in ranked
+        {"text": bm25_corpus[i], "metadata": bm25_corpus_meta[i], "score": float(scores[i])}
+        for i in top_indices if scores[i] > 0
     ]
 
 
+def reciprocal_rank_fusion(vector_results, bm25_results, k: int = 60):
+    rrf_scores = {}
+    texts_map  = {}
+    for rank, item in enumerate(vector_results):
+        text = item["text"]
+        rrf_scores[text] = rrf_scores.get(text, 0) + 1 / (k + rank + 1)
+        texts_map[text]  = item["metadata"]
+    for rank, item in enumerate(bm25_results):
+        text = item["text"]
+        rrf_scores[text] = rrf_scores.get(text, 0) + 1 / (k + rank + 1)
+        texts_map[text]  = item["metadata"]
+    ranked = sorted(rrf_scores.items(), key=lambda x: x[1], reverse=True)
+    return [{"text": text, "metadata": texts_map[text], "rrf_score": score} for text, score in ranked]
+
+
 def retrieve_context(question: str):
-    """
-    Hybrid retrieval pipeline:
-    1. Generate multiple search queries
-    2. For each query: vector search + BM25 search
-    3. Merge all results with RRF
-    4. Return top-5 unique chunks
-    """
     queries = generate_search_queries(question)
-
-    all_vector_results = []
-    all_bm25_results   = []
-
+    all_vector, all_bm25 = [], []
     for q in queries:
-        all_vector_results.extend(vector_search(q, top_k=3))
-        all_bm25_results.extend(bm25_search(q, top_k=3))
+        all_vector.extend(vector_search(q, top_k=3))
+        all_bm25.extend(bm25_search(q, top_k=3))
 
-    # Deduplicate within each result set before RRF
-    seen_v = set()
-    unique_vector = []
-    for r in all_vector_results:
+    seen_v, unique_vector = set(), []
+    for r in all_vector:
         if r["text"] not in seen_v:
-            seen_v.add(r["text"])
-            unique_vector.append(r)
+            seen_v.add(r["text"]); unique_vector.append(r)
 
-    seen_b = set()
-    unique_bm25 = []
-    for r in all_bm25_results:
+    seen_b, unique_bm25 = set(), []
+    for r in all_bm25:
         if r["text"] not in seen_b:
-            seen_b.add(r["text"])
-            unique_bm25.append(r)
+            seen_b.add(r["text"]); unique_bm25.append(r)
 
-    # Fuse results
     fused = reciprocal_rank_fusion(unique_vector, unique_bm25)
-
-    # Take top 5
-    top = fused[:5]
+    top   = fused[:5]
 
     if not top:
         return None, []
 
     context = "\n\n".join([r["text"] for r in top])
     sources = [
-        {
-            "text":   r["text"],
-            "source": r["metadata"].get("source", ""),
-            "page":   r["metadata"].get("page", "")
-        }
+        {"text": r["text"], "source": r["metadata"].get("source", ""), "page": r["metadata"].get("page", "")}
         for r in top
     ]
-
     return context, sources
 
 
 # ------------------------------------------------
-# LLM Generation helpers
+# LLM helpers
 # ------------------------------------------------
 
 def build_prompt(question: str, context: str, history_text: str) -> str:
@@ -347,7 +274,6 @@ Rules:
 - Use ONLY the information from the context below
 - Do NOT invent or assume information
 - If the answer is not in the context say: "The information is not available in the provided documents"
-- Keep answers clear and concise
 
 Conversation History:
 {history_text}
@@ -362,7 +288,6 @@ Answer:"""
 
 
 def generate_with_groq(prompt: str) -> str:
-    """Non-streaming Groq fallback."""
     try:
         response = groq_client.chat.completions.create(
             model="llama-3.1-8b-instant",
@@ -376,7 +301,7 @@ def generate_with_groq(prompt: str) -> str:
         return response.choices[0].message.content
     except Exception as e:
         print("Groq error:", e)
-        return "Both AI models are currently unavailable. Please try again later."
+        return "Both AI models are currently unavailable."
 
 
 # ------------------------------------------------
@@ -386,171 +311,314 @@ def generate_with_groq(prompt: str) -> str:
 @app.get("/")
 def root():
     return {
-        "message":      "Enterprise GenAI Assistant API",
-        "version":      "4.0",
-        "retrieval":    "hybrid (vector + BM25 + RRF)",
-        "llm_primary":  "gemini-2.5-flash",
-        "llm_fallback": "groq/llama-3.1-8b-instant",
-        "bm25_corpus":  len(bm25_corpus)
+        "message":     "Enterprise GenAI Assistant API",
+        "version":     "4.1",
+        "retrieval":   "hybrid (vector + BM25 + RRF)",
+        "llm_primary": "gemini-2.5-flash",
+        "bm25_corpus": len(bm25_corpus)
     }
 
 
 # ------------------------------------------------
-# /ask — Standard (non-streaming) endpoint
+# /ask — Standard endpoint
 # ------------------------------------------------
 
 @app.post("/ask")
 def ask_question(request: QuestionRequest):
-
     question   = request.question
     session_id = request.session_id
-
     try:
         history      = chat_memory.get(session_id, [])
         history_text = "\n".join(history)
-
         context, sources = retrieve_context(question)
-
         if context is None:
-            return {
-                "answer":     "No relevant information found in the knowledge base.",
-                "sources":    [],
-                "session_id": session_id
-            }
-
+            return {"answer": "No relevant information found in the knowledge base.", "sources": [], "session_id": session_id}
         prompt = build_prompt(question, context, history_text)
-
         try:
-            response = gemini_client.models.generate_content(
-                model="gemini-2.5-flash",
-                contents=prompt
-            )
-            answer = response.text
-
+            response = gemini_client.models.generate_content(model="gemini-2.5-flash", contents=prompt)
+            answer   = response.text
         except Exception as e:
             err = str(e)
             print("Gemini error:", err)
             if "429" in err or "RESOURCE_EXHAUSTED" in err or "quota" in err.lower():
-                print("Switching to Groq fallback")
                 answer = generate_with_groq(prompt)
             else:
                 answer = "AI processing error. Please try again."
-
         history.append(f"User: {question}")
         history.append(f"Assistant: {answer}")
         chat_memory[session_id] = history
-
-        return {
-            "answer":     answer,
-            "sources":    sources,
-            "session_id": session_id
-        }
-
+        return {"answer": answer, "sources": sources, "session_id": session_id}
     except Exception as e:
         print("ERROR in /ask:", e)
         raise HTTPException(status_code=500, detail="Internal RAG pipeline error")
 
 
 # ------------------------------------------------
-# /ask-stream — Streaming endpoint (Phase 1)
+# /ask-stream — Streaming endpoint
 # ------------------------------------------------
 
 @app.post("/ask-stream")
 async def ask_question_stream(request: QuestionRequest):
-    """
-    Streaming version of /ask.
-    Returns server-sent events (SSE) with tokens as they generate.
-    Frontend reads chunks via requests stream=True.
-    """
-
     question   = request.question
     session_id = request.session_id
-
     history      = chat_memory.get(session_id, [])
     history_text = "\n".join(history)
-
     context, sources = retrieve_context(question)
 
-    # No context — stream a single message
     if context is None:
         async def no_context_stream():
-            msg = "No relevant information found in the knowledge base."
-            yield f"data: {json.dumps({'token': msg, 'done': False})}\n\n"
+            yield f"data: {json.dumps({'token': 'No relevant information found.', 'done': False})}\n\n"
             yield f"data: {json.dumps({'sources': [], 'done': True})}\n\n"
-
-        return StreamingResponse(
-            no_context_stream(),
-            media_type="text/event-stream",
-            headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"}
-        )
+        return StreamingResponse(no_context_stream(), media_type="text/event-stream",
+                                 headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
 
     prompt = build_prompt(question, context, history_text)
 
     async def stream_tokens():
         full_answer = ""
-
-        # ── Gemini streaming ──
         try:
-            response = gemini_client.models.generate_content_stream(
-                model="gemini-2.5-flash",
-                contents=prompt
-            )
-
+            response = gemini_client.models.generate_content_stream(model="gemini-2.5-flash", contents=prompt)
             for chunk in response:
                 if chunk.text:
                     full_answer += chunk.text
                     yield f"data: {json.dumps({'token': chunk.text, 'done': False})}\n\n"
-
         except Exception as gemini_err:
             err = str(gemini_err)
-            print(f"Gemini stream error: {err}")
-
             if "429" in err or "RESOURCE_EXHAUSTED" in err or "quota" in err.lower():
-                print("Streaming fallback to Groq...")
-
-                # ── Groq streaming fallback ──
                 try:
                     full_answer = ""
                     stream = groq_client.chat.completions.create(
                         model="llama-3.1-8b-instant",
-                        messages=[
-                            {"role": "system", "content": "Answer using provided company documents only."},
-                            {"role": "user",   "content": prompt}
-                        ],
-                        max_tokens=1024,
-                        temperature=0.2,
-                        stream=True
+                        messages=[{"role": "user", "content": prompt}],
+                        max_tokens=1024, temperature=0.2, stream=True
                     )
-
                     for chunk in stream:
                         token = chunk.choices[0].delta.content or ""
                         if token:
                             full_answer += token
                             yield f"data: {json.dumps({'token': token, 'done': False})}\n\n"
-
-                except Exception as groq_err:
-                    msg = f"Both LLMs failed. Please try again."
+                except Exception:
+                    msg = "Both LLMs failed. Please try again."
                     yield f"data: {json.dumps({'token': msg, 'done': False})}\n\n"
                     full_answer = msg
-
             else:
-                msg = "AI processing error. Please try again."
+                msg = "AI processing error."
                 yield f"data: {json.dumps({'token': msg, 'done': False})}\n\n"
                 full_answer = msg
 
-        # Update conversation memory
         history.append(f"User: {question}")
         history.append(f"Assistant: {full_answer}")
         chat_memory[session_id] = history
-
-        # Final event with sources
         yield f"data: {json.dumps({'sources': sources, 'done': True})}\n\n"
 
-    return StreamingResponse(
-        stream_tokens(),
-        media_type="text/event-stream",
-        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"}
-    )
+    return StreamingResponse(stream_tokens(), media_type="text/event-stream",
+                             headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
+
+
+# ------------------------------------------------
+# /evaluate — RAGAS + TruLens evaluation endpoint
+# ------------------------------------------------
+
+EVAL_DATASET = [
+    {
+        "question":     "How many days of paid sick leave are employees entitled to per year?",
+        "ground_truth": "Employees are entitled to 10 days of paid sick leave per year. Sick leave cannot be carried forward and does not accumulate."
+    },
+    {
+        "question":     "What is the notice period for resignation?",
+        "ground_truth": "The notice period is 1 month for regular employees and 3 months for senior and managerial roles."
+    },
+    {
+        "question":     "What is the minimum password length required by the company policy?",
+        "ground_truth": "All system passwords must be at least 12 characters long and include uppercase, lowercase, numbers, and special characters. Passwords must be changed every 90 days."
+    },
+    {
+        "question":     "What is the daily meal allowance cap during business travel?",
+        "ground_truth": "Meal allowances during business travel are capped at USD 50 per day including breakfast, lunch, and dinner. Alcohol expenses are not reimbursable."
+    },
+    {
+        "question":     "How many days of annual paid leave are employees entitled to?",
+        "ground_truth": "Each employee is entitled to 20 days of paid annual leave per year. Unused leave can be carried forward up to 10 days."
+    }
+]
+
+
+@app.post("/evaluate")
+async def run_evaluation():
+    """
+    Run RAGAS + TruLens evaluation on 5 ground truth questions.
+    Returns scores for display in Streamlit EVAL tab.
+    """
+
+    ragas_per_q   = []
+    trulens_per_q = []
+
+    ragas_scores = {
+        "faithfulness":      [],
+        "answer_relevancy":  [],
+        "context_precision": [],
+        "context_recall":    []
+    }
+
+    trulens_scores = {
+        "groundedness":      [],
+        "answer_relevance":  [],
+        "context_relevance": []
+    }
+
+    for item in EVAL_DATASET:
+        q  = item["question"]
+        gt = item["ground_truth"]
+
+        # Run RAG pipeline
+        context, sources = retrieve_context(q)
+
+        if context is None:
+            context = ""
+            answer  = "No relevant information found."
+        else:
+            prompt = f"""Answer using only the context below.
+
+Context:
+{context}
+
+Question: {q}
+
+Answer:"""
+            try:
+                response = gemini_client.models.generate_content(
+                    model="gemini-2.5-flash", contents=prompt
+                )
+                answer = response.text
+            except Exception as e:
+                err = str(e)
+                if "429" in err or "quota" in err.lower():
+                    answer = generate_with_groq(prompt)
+                else:
+                    answer = "Error generating answer."
+
+        # ── RAGAS scoring via Groq as judge ──
+        ragas_q_scores = _ragas_score(q, answer, context, gt)
+        ragas_per_q.append({"question": q, **ragas_q_scores})
+        for k in ragas_scores:
+            ragas_scores[k].append(ragas_q_scores.get(k, 0.0))
+
+        # ── TruLens scoring via Groq as judge ──
+        trulens_q_scores = _trulens_score(q, answer, context)
+        trulens_per_q.append({"question": q, "answer": answer[:150], **trulens_q_scores})
+        for k in trulens_scores:
+            trulens_scores[k].append(trulens_q_scores.get(k, 0.0))
+
+    # Aggregate
+    ragas_agg = {k: round(float(np.mean(v)), 4) for k, v in ragas_scores.items()}
+    ragas_agg["overall"] = round(float(np.mean(list(ragas_agg.values()))), 4)
+
+    trulens_agg = {k: round(float(np.mean(v)), 4) for k, v in trulens_scores.items()}
+    trulens_agg["overall"] = round(float(np.mean(list(trulens_agg.values()))), 4)
+
+    return {
+        "ragas":   {"scores": ragas_agg,   "per_question": ragas_per_q},
+        "trulens": {"scores": trulens_agg, "per_question": trulens_per_q}
+    }
+
+
+def _ragas_score(question: str, answer: str, context: str, ground_truth: str) -> dict:
+    """
+    Use Groq as LLM judge to approximate RAGAS metrics.
+    Each metric is scored 0.0 - 1.0.
+    """
+
+    def judge(prompt: str) -> float:
+        try:
+            res = groq_client.chat.completions.create(
+                model="llama-3.1-8b-instant",
+                messages=[{"role": "user", "content": prompt}],
+                max_tokens=10,
+                temperature=0
+            )
+            text = res.choices[0].message.content.strip()
+            # Extract first float found in response
+            import re
+            nums = re.findall(r"\d+\.?\d*", text)
+            score = float(nums[0]) if nums else 0.5
+            # Normalize if score > 1 (model may return 0-10 scale)
+            if score > 1:
+                score = score / 10
+            return round(min(max(score, 0.0), 1.0), 3)
+        except Exception:
+            return 0.5
+
+    faithfulness = judge(f"""Score from 0.0 to 1.0: Is this answer faithful to the context only?
+Context: {context[:500]}
+Answer: {answer[:300]}
+Score (0.0-1.0 only):""")
+
+    answer_relevancy = judge(f"""Score from 0.0 to 1.0: Is this answer relevant to the question?
+Question: {question}
+Answer: {answer[:300]}
+Score (0.0-1.0 only):""")
+
+    context_precision = judge(f"""Score from 0.0 to 1.0: Is this context precise and useful for answering the question?
+Question: {question}
+Context: {context[:500]}
+Score (0.0-1.0 only):""")
+
+    context_recall = judge(f"""Score from 0.0 to 1.0: Does the context contain all information needed to match this ground truth?
+Ground Truth: {ground_truth}
+Context: {context[:500]}
+Score (0.0-1.0 only):""")
+
+    return {
+        "faithfulness":      faithfulness,
+        "answer_relevancy":  answer_relevancy,
+        "context_precision": context_precision,
+        "context_recall":    context_recall
+    }
+
+
+def _trulens_score(question: str, answer: str, context: str) -> dict:
+    """
+    Use Groq as LLM judge to approximate TruLens metrics.
+    """
+
+    def judge(prompt: str) -> float:
+        try:
+            res = groq_client.chat.completions.create(
+                model="llama-3.1-8b-instant",
+                messages=[{"role": "user", "content": prompt}],
+                max_tokens=10,
+                temperature=0
+            )
+            text = res.choices[0].message.content.strip()
+            import re
+            nums = re.findall(r"\d+\.?\d*", text)
+            score = float(nums[0]) if nums else 0.5
+            if score > 1:
+                score = score / 10
+            return round(min(max(score, 0.0), 1.0), 3)
+        except Exception:
+            return 0.5
+
+    groundedness = judge(f"""Score 0.0-1.0: Is every claim in the answer supported by the context?
+Context: {context[:500]}
+Answer: {answer[:300]}
+Score (0.0-1.0 only):""")
+
+    answer_relevance = judge(f"""Score 0.0-1.0: Does the answer directly address the question?
+Question: {question}
+Answer: {answer[:300]}
+Score (0.0-1.0 only):""")
+
+    context_relevance = judge(f"""Score 0.0-1.0: Is the retrieved context relevant to the question?
+Question: {question}
+Context: {context[:500]}
+Score (0.0-1.0 only):""")
+
+    return {
+        "groundedness":      groundedness,
+        "answer_relevance":  answer_relevance,
+        "context_relevance": context_relevance
+    }
 
 
 # ------------------------------------------------
@@ -559,7 +627,6 @@ async def ask_question_stream(request: QuestionRequest):
 
 @app.post("/upload")
 async def upload_document(file: UploadFile = File(...)):
-
     if not file.filename.endswith((".pdf", ".txt")):
         raise HTTPException(status_code=400, detail="Only PDF and TXT supported")
 
@@ -567,112 +634,67 @@ async def upload_document(file: UploadFile = File(...)):
     file_size_mb = len(content) / (1024 * 1024)
 
     if file_size_mb > MAX_FILE_SIZE_MB:
-        raise HTTPException(
-            status_code=413,
-            detail=f"File too large ({file_size_mb:.1f}MB). Max {MAX_FILE_SIZE_MB}MB allowed."
-        )
+        raise HTTPException(status_code=413,
+                            detail=f"File too large ({file_size_mb:.1f}MB). Max {MAX_FILE_SIZE_MB}MB.")
 
-    tmp_path     = None
+    tmp_path = None
     total_chunks = 0
-    vectors      = []
+    vectors = []
 
     try:
         suffix = os.path.splitext(file.filename)[1]
         with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
             tmp.write(content)
             tmp_path = tmp.name
-
         del content
         gc.collect()
 
         if file.filename.endswith(".pdf"):
             reader = PdfReader(tmp_path)
-
             for page_num, page in enumerate(reader.pages):
                 text = page.extract_text()
                 if not text or not text.strip():
                     continue
-
                 chunks = splitter.split_text(text)
-
                 for chunk in chunks:
                     if not chunk.strip():
                         continue
-
                     embedding = get_embedding(chunk)
-                    meta      = {
-                        "text":     chunk,
-                        "source":   file.filename,
-                        "page":     page_num + 1,
-                        "chunk_id": f"{file.filename}_p{page_num+1}_{total_chunks}"
-                    }
-
-                    vectors.append({
-                        "id":     str(uuid.uuid4()),
-                        "values": embedding,
-                        "metadata": meta
-                    })
-
-                    # Also add to BM25 corpus
+                    meta = {"text": chunk, "source": file.filename,
+                            "page": page_num + 1,
+                            "chunk_id": f"{file.filename}_p{page_num+1}_{total_chunks}"}
+                    vectors.append({"id": str(uuid.uuid4()), "values": embedding, "metadata": meta})
                     add_to_bm25(chunk, meta)
-
                     total_chunks += 1
-
                     if len(vectors) >= 25:
-                        index.upsert(vectors)
-                        vectors = []
-                        gc.collect()
-
-                del text, chunks
-                gc.collect()
+                        index.upsert(vectors); vectors = []; gc.collect()
+                del text, chunks; gc.collect()
 
         elif file.filename.endswith(".txt"):
             with open(tmp_path, "r", encoding="utf-8", errors="ignore") as f:
                 text = f.read()
-
             chunks = splitter.split_text(text)
-            del text
-            gc.collect()
-
+            del text; gc.collect()
             for chunk in chunks:
                 if not chunk.strip():
                     continue
-
                 embedding = get_embedding(chunk)
-                meta      = {
-                    "text":     chunk,
-                    "source":   file.filename,
-                    "page":     1,
-                    "chunk_id": f"{file.filename}_p1_{total_chunks}"
-                }
-
-                vectors.append({
-                    "id":     str(uuid.uuid4()),
-                    "values": embedding,
-                    "metadata": meta
-                })
-
+                meta = {"text": chunk, "source": file.filename, "page": 1,
+                        "chunk_id": f"{file.filename}_p1_{total_chunks}"}
+                vectors.append({"id": str(uuid.uuid4()), "values": embedding, "metadata": meta})
                 add_to_bm25(chunk, meta)
                 total_chunks += 1
-
                 if len(vectors) >= 25:
-                    index.upsert(vectors)
-                    vectors = []
-                    gc.collect()
+                    index.upsert(vectors); vectors = []; gc.collect()
 
         if vectors:
-            index.upsert(vectors)
-            gc.collect()
+            index.upsert(vectors); gc.collect()
 
         if 'tmp_path' in locals() and tmp_path and os.path.exists(tmp_path):
             os.unlink(tmp_path)
 
-        return {
-            "message":      "Document indexed successfully",
-            "filename":     file.filename,
-            "total_chunks": total_chunks,
-            "bm25_corpus":  len(bm25_corpus)
-        }
+        return {"message": "Document indexed successfully", "filename": file.filename,
+                "total_chunks": total_chunks, "bm25_corpus": len(bm25_corpus)}
 
     except Exception as e:
         print("Upload error:", e)

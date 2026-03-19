@@ -3,11 +3,16 @@ uvicorn[standard]
 python-multipart
 
 pinecone
-rank-bm25
+
 google-genai
+
+groq
 
 python-dotenv
 requests
+numpy
+
 pypdf
 langchain-text-splitters
-groq
+
+rank-bm25
