@@ -15,79 +15,80 @@ UPLOAD_URL   = f"{API_BASE}/upload"
 EVALUATE_URL = f"{API_BASE}/evaluate"
 
 st.set_page_config(
-    page_title="NEXUS — Enterprise Knowledge",
-    page_icon="⬡",
+    page_title="NEXUS — Enterprise AI OS",
+    page_icon="⚡",
     layout="wide",
     initial_sidebar_state="collapsed"
 )
 
 st.markdown("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&family=DM+Mono:wght@300;400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@400;500&display=swap');
 
 /* ══════════════════════════════════════════════
-   ROOT VARIABLES — Warm editorial palette
+   ROOT VARIABLES — Modern AI Dark Theme
 ══════════════════════════════════════════════ */
 :root {
-    --cream:    #f7f4ef;
-    --cream2:   #ede9e2;
-    --cream3:   #e2ddd5;
-    --ink:      #1a1714;
-    --ink2:     #3d3830;
-    --ink3:     #6b6358;
-    --ink4:     #9b9088;
-    --ink5:     #c8c0b8;
-    --acc:      #c84b2f;
-    --acc2:     #e8693a;
-    --acc-pale: #f5e8e4;
-    --grn:      #2d6a4f;
-    --grn-pale: #e8f4ee;
-    --blu:      #1e3a5f;
-    --blu-pale: #e8eef5;
-    --amb:      #b5621e;
-    --amb-pale: #f5ede4;
-    --bdr:      rgba(26,23,20,0.10);
-    --bdr2:     rgba(26,23,20,0.06);
-    --shadow:   0 2px 16px rgba(26,23,20,0.08);
-    --shadow2:  0 8px 40px rgba(26,23,20,0.12);
+    --bg-base:      #050814;
+    --bg-card:      rgba(15, 23, 42, 0.6);
+    --bg-card-hover:rgba(30, 41, 59, 0.8);
+    --text-main:    #F8FAFC;
+    --text-muted:   #94A3B8;
+    --text-dim:     #64748B;
+    
+    --neon-cyan:    #00E5FF;
+    --neon-blue:    #2979FF;
+    --neon-purple:  #B388FF;
+    --neon-green:   #00E676;
+    --neon-orange:  #FF9100;
+    
+    --bdr-color:    rgba(255, 255, 255, 0.08);
+    --bdr-hover:    rgba(0, 229, 255, 0.3);
+    
+    --shadow-glow:  0 0 20px rgba(0, 229, 255, 0.15);
+    --glass-blur:   blur(12px);
 }
 
 /* ══════════════════════════════════════════════
-   BASE RESET
+   BASE RESET & BACKGROUND
 ══════════════════════════════════════════════ */
 *, *::before, *::after { box-sizing: border-box; }
 
 html, body, .stApp {
-    font-family: 'DM Sans', sans-serif !important;
-    background: var(--cream) !important;
-    color: var(--ink) !important;
+    font-family: 'Inter', sans-serif !important;
+    background-color: var(--bg-base) !important;
+    color: var(--text-main) !important;
 }
 
+/* Subtle animated tech grid background */
 .stApp {
-    background: var(--cream) !important;
-    background-image:
-        radial-gradient(ellipse 80% 50% at 50% -20%,
-            rgba(200,75,47,0.04) 0%, transparent 60%) !important;
+    background-image: 
+        linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px) !important;
+    background-size: 40px 40px !important;
+    background-position: center center !important;
+    animation: grid-move 20s linear infinite;
+}
+
+@keyframes grid-move {
+    0% { background-position: 0 0; }
+    100% { background-position: 40px 40px; }
 }
 
 /* hide chrome */
-#MainMenu, footer { visibility: hidden !important; }
-header { visibility: hidden !important; }
+#MainMenu, footer, header { visibility: hidden !important; }
 .stDeployButton { display: none !important; }
 [data-testid="collapsedControl"] { display: none !important; }
 section[data-testid="stSidebar"] { display: none !important; }
-[data-testid="chatAvatarIcon-user"],
-[data-testid="chatAvatarIcon-assistant"],
-[data-testid="stChatMessageAvatarUser"],
-[data-testid="stChatMessageAvatarAssistant"] { display: none !important; }
+[data-testid="chatAvatarIcon-user"], [data-testid="chatAvatarIcon-assistant"],
+[data-testid="stChatMessageAvatarUser"], [data-testid="stChatMessageAvatarAssistant"] { display: none !important; }
 [data-testid="stChatMessage"] {
-    background: transparent !important; border: none !important;
-    padding: 0 !important; gap: 0 !important;
+    background: transparent !important; border: none !important; padding: 0 !important; gap: 0 !important;
 }
 
 .block-container {
-    padding-top: 0 !important;
-    max-width: 1100px !important;
+    padding-top: 1rem !important;
+    max-width: 1200px !important;
     padding-left: 2rem !important;
     padding-right: 2rem !important;
 }
@@ -96,111 +97,75 @@ section[data-testid="stSidebar"] { display: none !important; }
    MASTHEAD
 ══════════════════════════════════════════════ */
 .masthead {
-    border-bottom: 3px solid var(--ink);
-    padding: 28px 0 20px;
-    margin-bottom: 0;
-    animation: fadein .6s ease both;
+    border-bottom: 1px solid var(--bdr-color);
+    padding: 20px 0;
+    margin-bottom: 20px;
+    animation: fade-slide-down 0.6s ease-out both;
 }
 
 .masthead-top {
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     justify-content: space-between;
-    margin-bottom: 12px;
+    margin-bottom: 16px;
 }
 
 .masthead-brand {
     display: flex;
     align-items: center;
-    gap: 14px;
+    gap: 16px;
 }
 
 .brand-mark {
-    width: 44px; height: 44px;
-    background: var(--ink);
-    clip-path: polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);
+    width: 48px; height: 48px;
+    background: linear-gradient(135deg, var(--neon-cyan), var(--neon-blue));
+    border-radius: 12px;
     display: grid; place-items: center;
-    font-family: 'DM Mono', monospace !important;
-    font-weight: 500; font-size: 0.75rem;
-    color: var(--cream) !important;
-    flex-shrink: 0;
-    animation: hexspin 20s linear infinite;
-}
-
-@keyframes hexspin {
-    0%   { filter: brightness(1); }
-    50%  { filter: brightness(1.2); }
-    100% { filter: brightness(1); }
+    font-family: 'Fira Code', monospace !important;
+    font-weight: 700; font-size: 1.1rem;
+    color: #000 !important;
+    box-shadow: var(--shadow-glow);
+    animation: pulse-glow 3s infinite alternate;
 }
 
 .brand-text-name {
-    font-family: 'Playfair Display', serif !important;
-    font-weight: 700; font-size: 1.6rem;
-    letter-spacing: -0.02em; color: var(--ink) !important;
-    line-height: 1;
+    font-weight: 700; font-size: 1.8rem;
+    letter-spacing: -0.03em;
+    background: linear-gradient(to right, #FFF, var(--text-muted));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    line-height: 1.1;
 }
 
 .brand-text-sub {
-    font-family: 'DM Mono', monospace !important;
-    font-size: 0.55rem; color: var(--ink4) !important;
-    letter-spacing: 0.14em; text-transform: uppercase; margin-top: 3px;
+    font-family: 'Fira Code', monospace !important;
+    font-size: 0.65rem; color: var(--neon-cyan) !important;
+    letter-spacing: 0.2em; text-transform: uppercase; margin-top: 4px;
 }
 
 .masthead-right {
     display: flex;
     flex-direction: column;
     align-items: flex-end;
-    gap: 6px;
+    gap: 8px;
 }
 
 .live-indicator {
-    display: flex; align-items: center; gap: 6px;
-    font-family: 'DM Mono', monospace !important;
-    font-size: 0.58rem; color: var(--grn) !important;
+    display: flex; align-items: center; gap: 8px;
+    font-family: 'Fira Code', monospace !important;
+    font-size: 0.65rem; color: var(--neon-green) !important;
     letter-spacing: 0.1em; text-transform: uppercase;
+    background: rgba(0, 230, 118, 0.1);
+    padding: 4px 12px; border-radius: 20px;
+    border: 1px solid rgba(0, 230, 118, 0.2);
 }
 
 .live-dot {
     width: 6px; height: 6px; border-radius: 50%;
-    background: var(--grn);
-    animation: livepulse 2s ease-in-out infinite;
+    background: var(--neon-green);
+    box-shadow: 0 0 8px var(--neon-green);
+    animation: blink 1.5s infinite;
 }
-
-@keyframes livepulse {
-    0%,100% { opacity: 1; box-shadow: 0 0 0 0 rgba(45,106,79,.5); }
-    50%      { opacity: .6; box-shadow: 0 0 0 5px rgba(45,106,79,0); }
-}
-
-.version-tag {
-    font-family: 'DM Mono', monospace !important;
-    font-size: 0.52rem; color: var(--ink5) !important;
-    letter-spacing: 0.1em;
-}
-
-/* Hero headline */
-.masthead-headline {
-    font-family: 'Playfair Display', serif !important;
-    font-weight: 400; font-style: italic;
-    font-size: 1.05rem; color: var(--ink3) !important;
-    border-top: 1px solid var(--bdr);
-    padding-top: 12px;
-    display: flex; align-items: center;
-    justify-content: space-between;
-}
-
-.masthead-tags {
-    display: flex; gap: 8px; flex-wrap: wrap;
-}
-
-.mtag {
-    font-family: 'DM Mono', monospace !important;
-    font-size: 0.52rem; color: var(--ink4) !important;
-    background: var(--cream2); border: 1px solid var(--bdr);
-    border-radius: 2px; padding: 2px 8px; letter-spacing: 0.06em;
-    text-transform: uppercase;
-}
-
-.mtag.acc { background: var(--acc-pale); color: var(--acc) !important; border-color: rgba(200,75,47,0.2); }
 
 /* ══════════════════════════════════════════════
    STATS STRIP
@@ -208,48 +173,51 @@ section[data-testid="stSidebar"] { display: none !important; }
 .stats-strip {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    border-bottom: 1px solid var(--bdr);
-    animation: fadein .7s ease both;
+    gap: 16px;
+    margin-bottom: 20px;
+    animation: fade-slide-up 0.7s ease-out both;
+    animation-delay: 0.1s;
 }
 
 .stat-cell {
-    padding: 18px 0;
+    background: var(--bg-card);
+    backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--bdr-color);
+    border-radius: 12px;
+    padding: 20px;
     text-align: center;
-    border-right: 1px solid var(--bdr);
     position: relative;
-    transition: background .2s;
+    overflow: hidden;
+    transition: all 0.3s ease;
 }
 
-.stat-cell:last-child { border-right: none; }
-.stat-cell:hover { background: var(--cream2); }
+.stat-cell:hover {
+    border-color: var(--bdr-hover);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-glow);
+}
 
 .stat-cell::before {
     content: '';
-    position: absolute; top: 0; left: 0; right: 0; height: 3px;
-    background: var(--c); opacity: 0;
-    transition: opacity .2s;
+    position: absolute; top: 0; left: 0; width: 100%; height: 2px;
+    background: var(--c); opacity: 0.8;
 }
-.stat-cell:hover::before { opacity: 1; }
 
-.stat-cell:nth-child(1) { --c: var(--acc); }
-.stat-cell:nth-child(2) { --c: var(--blu); }
-.stat-cell:nth-child(3) { --c: var(--grn); }
-.stat-cell:nth-child(4) { --c: var(--amb); }
+.stat-cell:nth-child(1) { --c: var(--neon-cyan); }
+.stat-cell:nth-child(2) { --c: var(--neon-purple); }
+.stat-cell:nth-child(3) { --c: var(--neon-green); }
+.stat-cell:nth-child(4) { --c: var(--neon-orange); }
 
 .stat-num {
-    font-family: 'Playfair Display', serif !important;
-    font-weight: 700; font-size: 2.2rem; line-height: 1;
+    font-weight: 700; font-size: 2.5rem; line-height: 1;
+    color: var(--text-main);
+    text-shadow: 0 0 10px rgba(255,255,255,0.1);
 }
 
-.stat-num.a { color: var(--acc) !important; }
-.stat-num.b { color: var(--blu) !important; }
-.stat-num.c { color: var(--grn) !important; }
-.stat-num.d { color: var(--amb) !important; }
-
 .stat-lbl {
-    font-family: 'DM Mono', monospace !important;
-    font-size: 0.52rem; color: var(--ink4) !important;
-    text-transform: uppercase; letter-spacing: 0.12em; margin-top: 4px;
+    font-family: 'Fira Code', monospace !important;
+    font-size: 0.6rem; color: var(--text-muted) !important;
+    text-transform: uppercase; letter-spacing: 0.15em; margin-top: 8px;
 }
 
 /* ══════════════════════════════════════════════
@@ -257,34 +225,33 @@ section[data-testid="stSidebar"] { display: none !important; }
 ══════════════════════════════════════════════ */
 .stTabs [data-baseweb="tab-list"] {
     background: transparent !important;
-    border-bottom: 1px solid var(--bdr) !important;
-    gap: 0 !important;
-    margin-bottom: 28px !important;
+    border-bottom: 1px solid var(--bdr-color) !important;
+    gap: 24px !important;
+    margin-bottom: 24px !important;
 }
 
 .stTabs [data-baseweb="tab"] {
     background: transparent !important;
     border: none !important;
     border-bottom: 2px solid transparent !important;
-    color: var(--ink4) !important;
-    font-family: 'DM Mono', monospace !important;
-    font-size: 0.65rem !important;
-    font-weight: 400 !important;
-    letter-spacing: 0.12em !important;
+    color: var(--text-muted) !important;
+    font-family: 'Fira Code', monospace !important;
+    font-size: 0.75rem !important;
+    font-weight: 500 !important;
+    letter-spacing: 0.1em !important;
     text-transform: uppercase !important;
-    padding: 14px 24px !important;
-    transition: all .2s !important;
+    padding: 12px 0 !important;
+    transition: all 0.3s !important;
 }
 
 .stTabs [data-baseweb="tab"]:hover {
-    color: var(--ink) !important;
-    background: var(--cream2) !important;
+    color: var(--text-main) !important;
 }
 
 .stTabs [aria-selected="true"] {
-    color: var(--acc) !important;
-    border-bottom: 2px solid var(--acc) !important;
-    background: transparent !important;
+    color: var(--neon-cyan) !important;
+    border-bottom: 2px solid var(--neon-cyan) !important;
+    text-shadow: 0 0 8px rgba(0, 229, 255, 0.4) !important;
 }
 
 .stTabs [data-baseweb="tab-highlight"] { display: none !important; }
@@ -294,411 +261,252 @@ section[data-testid="stSidebar"] { display: none !important; }
 ══════════════════════════════════════════════ */
 .msg-u-wrap {
     display: flex; justify-content: flex-end;
-    margin: 16px 0; animation: slideright .25s ease both;
+    margin: 20px 0; animation: slide-left 0.3s ease-out both;
 }
 
-.msg-u-inner { max-width: 70%; }
+.msg-u-inner { max-width: 75%; }
 
 .msg-u-lbl {
     text-align: right;
-    font-family: 'DM Mono', monospace !important;
-    font-size: 0.5rem; letter-spacing: 0.16em; color: var(--ink4) !important;
-    text-transform: uppercase; margin-bottom: 5px;
+    font-family: 'Fira Code', monospace !important;
+    font-size: 0.6rem; letter-spacing: 0.15em; color: var(--text-dim) !important;
+    text-transform: uppercase; margin-bottom: 6px;
 }
 
 .msg-u-bubble {
-    background: var(--ink);
-    color: var(--cream) !important;
+    background: rgba(41, 121, 255, 0.1);
+    border: 1px solid rgba(41, 121, 255, 0.3);
+    color: var(--text-main) !important;
     border-radius: 16px 16px 4px 16px;
-    padding: 14px 20px;
-    font-family: 'DM Sans', sans-serif !important;
-    font-size: 0.92rem; line-height: 1.65;
+    padding: 16px 24px;
+    font-size: 0.95rem; line-height: 1.6;
+    backdrop-filter: var(--glass-blur);
 }
 
 /* ══════════════════════════════════════════════
    CHAT — BOT MESSAGE
 ══════════════════════════════════════════════ */
 .msg-b-lbl {
-    font-family: 'DM Mono', monospace !important;
-    font-size: 0.5rem; letter-spacing: 0.16em;
-    color: var(--grn) !important; text-transform: uppercase;
-    margin: 16px 0 5px; display: flex; align-items: center; gap: 7px;
-    animation: slideleft .25s ease both;
+    font-family: 'Fira Code', monospace !important;
+    font-size: 0.6rem; letter-spacing: 0.15em;
+    color: var(--neon-cyan) !important; text-transform: uppercase;
+    margin: 20px 0 6px; display: flex; align-items: center; gap: 8px;
+    animation: slide-right 0.3s ease-out both;
 }
 
 .msg-b-lbl-dot {
-    width: 5px; height: 5px; border-radius: 50%;
-    background: var(--grn); flex-shrink: 0;
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--neon-cyan); box-shadow: 0 0 8px var(--neon-cyan);
 }
 
 .msg-b-wrap {
-    max-width: 82%;
-    animation: slideleft .25s ease both;
-    margin-bottom: 4px;
+    max-width: 85%;
+    animation: slide-right 0.3s ease-out both;
+    margin-bottom: 8px;
 }
 
 .msg-b-bubble {
-    background: white;
-    border: 1px solid var(--bdr);
-    border-left: 3px solid var(--acc);
-    border-radius: 0 16px 16px 16px;
-    padding: 16px 22px;
-    font-family: 'DM Sans', sans-serif !important;
-    font-size: 0.92rem; line-height: 1.78;
-    color: var(--ink) !important;
-    box-shadow: var(--shadow);
+    background: var(--bg-card);
+    border: 1px solid var(--bdr-color);
+    border-left: 3px solid var(--neon-cyan);
+    border-radius: 4px 16px 16px 16px;
+    padding: 18px 24px;
+    font-size: 0.95rem; line-height: 1.7;
+    color: var(--text-main) !important;
+    backdrop-filter: var(--glass-blur);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
 }
 
 /* ══════════════════════════════════════════════
-   META BADGE
+   META BADGE & STREAMING CURSOR
 ══════════════════════════════════════════════ */
 .msg-meta {
     display: inline-flex; align-items: center; gap: 8px;
-    font-family: 'DM Mono', monospace !important;
-    font-size: 0.55rem; color: var(--ink4) !important;
-    background: var(--cream2); border: 1px solid var(--bdr);
-    border-radius: 3px; padding: 3px 10px; margin: 6px 0 16px;
-    letter-spacing: 0.05em;
+    font-family: 'Fira Code', monospace !important;
+    font-size: 0.6rem; color: var(--text-muted) !important;
+    background: rgba(0,0,0,0.3); border: 1px solid var(--bdr-color);
+    border-radius: 6px; padding: 4px 12px; margin: 8px 0 20px;
 }
 
-.meta-dot { width: 4px; height: 4px; border-radius: 50%; background: var(--grn); }
-
-/* ══════════════════════════════════════════════
-   STREAMING CURSOR
-══════════════════════════════════════════════ */
 .cur {
-    display: inline-block; width: 2px; height: 0.9em;
-    background: var(--acc); margin-left: 2px; vertical-align: text-bottom;
-    animation: blink .7s ease-in-out infinite;
+    display: inline-block; width: 6px; height: 1em;
+    background: var(--neon-cyan); margin-left: 4px; vertical-align: text-bottom;
+    animation: blink 0.8s infinite;
+    box-shadow: 0 0 8px var(--neon-cyan);
 }
-
-@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
 
 /* ══════════════════════════════════════════════
    SOURCE CARDS
 ══════════════════════════════════════════════ */
 .src-card {
-    background: var(--cream2);
-    border: 1px solid var(--bdr);
-    border-left: 3px solid var(--blu);
-    border-radius: 0 6px 6px 0;
-    padding: 12px 16px; margin: 8px 0;
+    background: rgba(0,0,0,0.2);
+    border: 1px solid var(--bdr-color);
+    border-left: 2px solid var(--neon-purple);
+    border-radius: 6px;
+    padding: 14px 18px; margin: 10px 0;
 }
 
 .src-lbl {
-    font-family: 'DM Mono', monospace !important;
-    font-size: 0.5rem; color: var(--blu) !important;
-    text-transform: uppercase; letter-spacing: 0.14em; margin-bottom: 3px;
-}
-
-.src-origin {
-    font-family: 'DM Mono', monospace !important;
-    font-size: 0.48rem; color: var(--ink5) !important;
-    margin-bottom: 7px;
+    font-family: 'Fira Code', monospace !important;
+    font-size: 0.6rem; color: var(--neon-purple) !important;
+    text-transform: uppercase; letter-spacing: 0.15em; margin-bottom: 6px;
 }
 
 .src-txt {
-    font-family: 'DM Mono', monospace !important;
-    font-size: 0.68rem; color: var(--ink3) !important; line-height: 1.75;
+    font-family: 'Inter', sans-serif !important;
+    font-size: 0.8rem; color: var(--text-muted) !important; line-height: 1.6;
 }
 
 /* ══════════════════════════════════════════════
    EMPTY STATE
 ══════════════════════════════════════════════ */
 .empty-state {
-    text-align: center; padding: 5rem 2rem;
-    animation: fadein .5s ease both;
+    text-align: center; padding: 6rem 2rem;
+    animation: fade-slide-up 0.5s ease out both;
 }
 
 .empty-mark {
-    font-family: 'Playfair Display', serif !important;
-    font-style: italic; font-size: 4rem;
-    color: var(--cream3) !important;
-    display: block; margin-bottom: 20px;
-    animation: floatmark 4s ease-in-out infinite;
+    font-size: 3.5rem; color: rgba(255,255,255,0.05);
+    display: block; margin-bottom: 24px;
+    animation: float 4s ease-in-out infinite;
 }
 
-@keyframes floatmark { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-12px)} }
-
 .empty-head {
-    font-family: 'Playfair Display', serif !important;
-    font-weight: 600; font-size: 1.3rem;
-    color: var(--ink3) !important; margin-bottom: 8px;
+    font-weight: 600; font-size: 1.5rem;
+    color: var(--text-main); margin-bottom: 12px;
 }
 
 .empty-sub {
-    font-family: 'DM Mono', monospace !important;
-    font-size: 0.62rem; color: var(--ink5) !important; letter-spacing: 0.05em;
+    font-family: 'Fira Code', monospace !important;
+    font-size: 0.75rem; color: var(--text-dim) !important; line-height: 1.8;
 }
 
 /* ══════════════════════════════════════════════
-   CHAT INPUT
+   INPUTS & EXPANDERS
 ══════════════════════════════════════════════ */
 [data-testid="stChatInput"] {
-    background: white !important;
-    border: 1px solid var(--bdr) !important;
-    border-bottom: 2px solid var(--ink) !important;
-    border-radius: 0 !important;
-    box-shadow: var(--shadow) !important;
-    transition: border-color .2s !important;
-    margin-top: 20px !important;
+    background: var(--bg-card) !important;
+    backdrop-filter: var(--glass-blur) !important;
+    border: 1px solid var(--bdr-color) !important;
+    border-radius: 12px !important;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3) !important;
+    transition: all 0.3s ease !important;
+    margin-top: 24px !important;
 }
 
 [data-testid="stChatInput"]:focus-within {
-    border-bottom-color: var(--acc) !important;
-    box-shadow: var(--shadow2) !important;
+    border-color: var(--neon-cyan) !important;
+    box-shadow: var(--shadow-glow) !important;
 }
 
 [data-testid="stChatInput"] textarea {
-    background: transparent !important;
-    color: var(--ink) !important;
-    font-family: 'DM Sans', sans-serif !important;
-    font-size: 0.92rem !important;
-    caret-color: var(--acc) !important;
+    color: var(--text-main) !important;
+    font-size: 1rem !important;
+    caret-color: var(--neon-cyan) !important;
 }
 
-[data-testid="stChatInput"] textarea::placeholder { color: var(--ink5) !important; }
-
-/* ══════════════════════════════════════════════
-   EXPANDER
-══════════════════════════════════════════════ */
 .streamlit-expanderHeader {
-    background: var(--cream2) !important;
-    border: 1px solid var(--bdr) !important;
-    border-radius: 4px !important;
-    font-family: 'DM Mono', monospace !important;
-    font-size: 0.6rem !important; letter-spacing: 0.1em !important;
-    color: var(--ink3) !important; text-transform: uppercase !important;
+    background: rgba(0,0,0,0.2) !important;
+    border: 1px solid var(--bdr-color) !important;
+    border-radius: 8px !important;
+    font-family: 'Fira Code', monospace !important;
+    font-size: 0.7rem !important; color: var(--text-muted) !important;
 }
 
 .streamlit-expanderContent {
-    background: var(--cream2) !important;
-    border: 1px solid var(--bdr) !important; border-top: none !important;
+    background: transparent !important; border: none !important;
 }
 
 /* ══════════════════════════════════════════════
-   BUTTONS
+   BUTTONS & TOGGLES
 ══════════════════════════════════════════════ */
 .stButton > button {
-    background: var(--ink) !important;
-    border: 2px solid var(--ink) !important;
-    color: var(--cream) !important;
-    font-family: 'DM Mono', monospace !important;
-    font-size: 0.62rem !important;
-    letter-spacing: 0.1em !important;
+    background: rgba(41, 121, 255, 0.1) !important;
+    border: 1px solid var(--neon-blue) !important;
+    color: var(--text-main) !important;
+    font-family: 'Fira Code', monospace !important;
+    font-size: 0.7rem !important; letter-spacing: 0.1em !important;
     text-transform: uppercase !important;
-    border-radius: 3px !important;
-    padding: 10px 22px !important;
-    transition: all .15s ease !important;
+    border-radius: 8px !important;
+    padding: 12px 24px !important;
+    transition: all 0.2s ease !important;
 }
 
 .stButton > button:hover {
-    background: var(--acc) !important;
-    border-color: var(--acc) !important;
-    color: white !important;
+    background: var(--neon-blue) !important;
+    box-shadow: 0 0 15px rgba(41, 121, 255, 0.4) !important;
+}
+
+.stToggle label { 
+    font-family: 'Fira Code', monospace !important; 
+    font-size: 0.7rem !important; color: var(--text-muted) !important; 
 }
 
 /* ══════════════════════════════════════════════
-   FILE UPLOADER
+   FILE UPLOADER & CARDS
 ══════════════════════════════════════════════ */
 [data-testid="stFileUploaderDropzone"] {
-    background: white !important;
-    border: 2px dashed var(--bdr) !important;
-    border-radius: 4px !important;
-    transition: border-color .2s !important;
+    background: rgba(0,0,0,0.2) !important;
+    border: 1px dashed var(--bdr-color) !important;
+    border-radius: 12px !important;
+    transition: all 0.3s !important;
+}
+[data-testid="stFileUploaderDropzone"]:hover { 
+    border-color: var(--neon-cyan) !important; 
+    background: rgba(0, 229, 255, 0.05) !important;
 }
 
-[data-testid="stFileUploaderDropzone"]:hover { border-color: var(--acc) !important; }
-
-[data-testid="stFileUploaderDropzone"] p,
-[data-testid="stFileUploaderDropzone"] span,
-[data-testid="stFileUploaderDropzone"] small {
-    font-family: 'DM Mono', monospace !important;
-    color: var(--ink4) !important; font-size: 0.68rem !important;
-}
-
-/* ══════════════════════════════════════════════
-   SECTION CARDS
-══════════════════════════════════════════════ */
 .sec-card {
-    background: white;
-    border: 1px solid var(--bdr);
-    border-radius: 6px;
+    background: var(--bg-card);
+    backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--bdr-color);
+    border-radius: 12px;
     padding: 24px;
-    margin-bottom: 14px;
-    box-shadow: var(--shadow);
-    transition: box-shadow .2s, transform .2s;
+    margin-bottom: 20px;
+    transition: all 0.3s ease;
 }
 
-.sec-card:hover { box-shadow: var(--shadow2); transform: translateY(-2px); }
+.sec-card:hover { border-color: var(--bdr-hover); box-shadow: var(--shadow-glow); transform: translateY(-2px); }
 
 .sec-card-title {
-    font-family: 'Playfair Display', serif !important;
-    font-weight: 600; font-size: 1rem;
-    color: var(--ink) !important;
-    margin-bottom: 16px;
-    display: flex; align-items: center; gap: 10px;
-    padding-bottom: 10px; border-bottom: 1px solid var(--bdr);
+    font-weight: 600; font-size: 1.1rem; color: var(--text-main);
+    margin-bottom: 20px; display: flex; align-items: center; gap: 12px;
+    padding-bottom: 12px; border-bottom: 1px solid var(--bdr-color);
 }
 
-.sec-card-title .accent-rule {
-    display: inline-block; width: 24px; height: 3px;
-    background: var(--acc); border-radius: 2px;
+.accent-rule {
+    display: inline-block; width: 24px; height: 4px;
+    background: var(--neon-cyan); border-radius: 4px;
+    box-shadow: 0 0 8px var(--neon-cyan);
 }
 
 .sec-card-body {
-    font-family: 'DM Mono', monospace !important;
-    font-size: 0.64rem; color: var(--ink3) !important; line-height: 2.2;
+    font-family: 'Fira Code', monospace !important;
+    font-size: 0.75rem; color: var(--text-muted) !important; line-height: 2.2;
 }
 
-.feat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.feat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 
 .feat-item {
-    font-family: 'DM Mono', monospace !important;
-    font-size: 0.58rem; color: var(--ink3) !important;
-    background: var(--cream2); border: 1px solid var(--bdr);
-    border-radius: 3px; padding: 9px 12px;
-    display: flex; align-items: center; gap: 8px;
-    transition: all .15s;
+    font-family: 'Fira Code', monospace !important; font-size: 0.65rem; color: var(--text-muted);
+    background: rgba(0,0,0,0.3); border: 1px solid var(--bdr-color);
+    border-radius: 6px; padding: 12px;
+    display: flex; align-items: center; gap: 10px;
 }
-
-.feat-item:hover { background: var(--cream3); }
-.feat-item.done { border-left: 3px solid var(--grn); }
-.feat-dot { width: 4px; height: 4px; border-radius: 50%; background: var(--ink4); flex-shrink: 0; }
-.feat-item.done .feat-dot { background: var(--grn); }
-
-/* ══════════════════════════════════════════════
-   EVAL TAB
-══════════════════════════════════════════════ */
-.eval-section-title {
-    font-family: 'Playfair Display', serif !important;
-    font-weight: 600; font-size: 0.95rem;
-    color: var(--ink) !important;
-    margin-bottom: 4px;
-}
-
-.eval-section-sub {
-    font-family: 'DM Mono', monospace !important;
-    font-size: 0.58rem; color: var(--ink4) !important;
-    margin-bottom: 18px; line-height: 1.8;
-}
-
-.score-panel {
-    background: white;
-    border: 1px solid var(--bdr);
-    border-radius: 6px;
-    padding: 20px;
-    box-shadow: var(--shadow);
-}
-
-.score-panel-label {
-    font-family: 'DM Mono', monospace !important;
-    font-size: 0.56rem; color: var(--ink4) !important;
-    text-transform: uppercase; letter-spacing: 0.14em;
-    margin-bottom: 16px; padding-bottom: 10px;
-    border-bottom: 1px solid var(--bdr);
-    display: flex; align-items: center; gap: 8px;
-}
-
-.score-panel-label .tool-dot {
-    width: 6px; height: 6px; border-radius: 50%;
-    flex-shrink: 0;
-}
-
-.score-row {
-    display: flex; align-items: center; gap: 12px; margin-bottom: 12px;
-}
-
-.score-name {
-    font-family: 'DM Mono', monospace !important;
-    font-size: 0.58rem; color: var(--ink3) !important;
-    width: 140px; flex-shrink: 0;
-    text-transform: uppercase; letter-spacing: 0.06em;
-}
-
-.score-track {
-    flex: 1; height: 6px; background: var(--cream2);
-    border-radius: 3px; overflow: hidden;
-}
-
-.score-fill { height: 6px; border-radius: 3px; }
-
-.score-num {
-    font-family: 'Playfair Display', serif !important;
-    font-weight: 700; font-size: 1rem;
-    width: 50px; text-align: right; flex-shrink: 0;
-}
-
-.overall-panel {
-    background: var(--ink);
-    border-radius: 6px; padding: 20px; text-align: center;
-    margin-top: 12px;
-}
-
-.overall-big {
-    font-family: 'Playfair Display', serif !important;
-    font-weight: 700; font-size: 2.8rem; line-height: 1;
-    color: var(--cream) !important;
-}
-
-.overall-sub {
-    font-family: 'DM Mono', monospace !important;
-    font-size: 0.52rem; color: var(--ink4) !important;
-    text-transform: uppercase; letter-spacing: 0.12em; margin-top: 6px;
-}
-
-.q-entry {
-    background: var(--cream2); border: 1px solid var(--bdr);
-    border-radius: 4px; padding: 12px 16px; margin: 8px 0;
-}
-
-.q-text {
-    font-family: 'DM Sans', sans-serif !important;
-    font-size: 0.85rem; color: var(--ink) !important; margin-bottom: 8px;
-}
-
-.q-badges { display: flex; flex-wrap: wrap; gap: 6px; }
-
-.q-badge {
-    font-family: 'DM Mono', monospace !important;
-    font-size: 0.56rem; border-radius: 3px; padding: 2px 8px;
-    letter-spacing: 0.04em;
-}
-
-/* ══════════════════════════════════════════════
-   INGEST NOTE
-══════════════════════════════════════════════ */
-.ingest-note {
-    font-family: 'DM Mono', monospace !important;
-    font-size: 0.6rem; color: var(--ink3) !important;
-    background: var(--cream2);
-    border: 1px solid var(--bdr);
-    border-left: 3px solid var(--acc);
-    border-radius: 0 4px 4px 0;
-    padding: 12px 16px; margin-top: 14px; line-height: 1.9;
-}
-
-/* ══════════════════════════════════════════════
-   ALERTS + SPINNER
-══════════════════════════════════════════════ */
-[data-testid="stAlert"] {
-    font-family: 'DM Mono', monospace !important;
-    font-size: 0.7rem !important; border-radius: 4px !important;
-}
-
-.stSpinner > div { border-top-color: var(--acc) !important; }
-
-/* ══════════════════════════════════════════════
-   TOGGLE
-══════════════════════════════════════════════ */
-.stToggle label { font-family: 'DM Mono', monospace !important; font-size: 0.62rem !important; color: var(--ink3) !important; }
+.feat-item.done { border-left: 3px solid var(--neon-green); color: var(--text-main); }
+.feat-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--text-dim); }
+.feat-item.done .feat-dot { background: var(--neon-green); box-shadow: 0 0 8px var(--neon-green); }
 
 /* ══════════════════════════════════════════════
    KEYFRAMES
 ══════════════════════════════════════════════ */
-@keyframes fadein    { from{opacity:0} to{opacity:1} }
-@keyframes slideright { from{opacity:0;transform:translateX(16px)} to{opacity:1;transform:translateX(0)} }
-@keyframes slideleft  { from{opacity:0;transform:translateX(-16px)} to{opacity:1;transform:translateX(0)} }
+@keyframes fade-slide-down { from{opacity:0;transform:translateY(-20px)} to{opacity:1;transform:translateY(0)} }
+@keyframes fade-slide-up   { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+@keyframes slide-right     { from{opacity:0;transform:translateX(-20px)} to{opacity:1;transform:translateX(0)} }
+@keyframes slide-left      { from{opacity:0;transform:translateX(20px)} to{opacity:1;transform:translateX(0)} }
+@keyframes pulse-glow      { 0%{box-shadow:0 0 10px rgba(0,229,255,0.2)} 100%{box-shadow:0 0 25px rgba(0,229,255,0.6)} }
+@keyframes blink           { 0%,100%{opacity:1} 50%{opacity:0} }
+@keyframes float           { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-15px)} }
 </style>
 """, unsafe_allow_html=True)
 
@@ -715,7 +523,6 @@ if "uploaded_docs" not in st.session_state: st.session_state.uploaded_docs = []
 if "use_stream"    not in st.session_state: st.session_state.use_stream    = True
 if "eval_results"  not in st.session_state: st.session_state.eval_results  = None
 
-
 def extract_src_text(src) -> str:
     if isinstance(src, dict):
         return str(src.get("text", src.get("content", str(src))))
@@ -729,25 +536,25 @@ def extract_src_meta(src) -> str:
     return ""
 
 def score_color(v: float) -> str:
-    if v >= 0.8: return "#2d6a4f"
-    if v >= 0.6: return "#b5621e"
-    return "#c84b2f"
+    if v >= 0.8: return "var(--neon-green)"
+    if v >= 0.6: return "var(--neon-orange)"
+    return "#FF1744"
 
 def score_label(v: float) -> str:
-    if v >= 0.8: return "STRONG"
-    if v >= 0.6: return "FAIR"
-    return "WEAK"
+    if v >= 0.8: return "OPTIMAL"
+    if v >= 0.6: return "ACCEPTABLE"
+    return "DEGRADED"
 
 def render_score(name: str, score: float):
     col = score_color(score)
     pct = int(score * 100)
     st.markdown(f"""
-    <div class="score-row">
-        <div class="score-name">{name}</div>
-        <div class="score-track">
-            <div class="score-fill" style="width:{pct}%;background:{col};"></div>
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px;">
+        <div style="font-family:'Fira Code',monospace;font-size:0.65rem;color:var(--text-muted);width:150px;text-transform:uppercase;letter-spacing:0.08em;">{name}</div>
+        <div style="flex:1;height:8px;background:rgba(255,255,255,0.05);border-radius:4px;overflow:hidden;box-shadow:inset 0 1px 3px rgba(0,0,0,0.5);">
+            <div style="height:100%;width:{pct}%;background:{col};box-shadow:0 0 10px {col};border-radius:4px;transition:width 1s ease-out;"></div>
         </div>
-        <div class="score-num" style="color:{col};">{score:.2f}</div>
+        <div style="font-weight:700;font-size:1rem;width:50px;text-align:right;color:{col};text-shadow:0 0 8px {col};">{score:.2f}</div>
     </div>
     """, unsafe_allow_html=True)
 
@@ -762,24 +569,17 @@ st.markdown("""
         <div class="masthead-brand">
             <div class="brand-mark">NX</div>
             <div>
-                <div class="brand-text-name">NEXUS</div>
-                <div class="brand-text-sub">Enterprise Knowledge OS &nbsp;·&nbsp; v4.1</div>
+                <div class="brand-text-name">NEXUS Core</div>
+                <div class="brand-text-sub">Enterprise AI OS &nbsp;·&nbsp; v4.5</div>
             </div>
         </div>
         <div class="masthead-right">
             <div class="live-indicator">
-                <span class="live-dot"></span>System Online
+                <span class="live-dot"></span>System Active
             </div>
-            <div class="version-tag">Hybrid RAG · RAGAS · TruLens</div>
-        </div>
-    </div>
-    <div class="masthead-headline">
-        <span><em>Ask anything. Get grounded answers with source citations.</em></span>
-        <div class="masthead-tags">
-            <span class="mtag acc">Gemini 2.5 Flash</span>
-            <span class="mtag">Pinecone 3072-dim</span>
-            <span class="mtag">BM25 + Vector</span>
-            <span class="mtag">RRF Fusion</span>
+            <div style="font-family:'Fira Code',monospace;font-size:0.6rem;color:var(--text-dim);letter-spacing:0.1em;margin-top:4px;">
+                Hybrid RAG · Edge Native
+            </div>
         </div>
     </div>
 </div>
@@ -794,31 +594,29 @@ avg = st.session_state.time_total / st.session_state.questions if st.session_sta
 st.markdown(f"""
 <div class="stats-strip">
     <div class="stat-cell">
-        <div class="stat-num a">{st.session_state.questions}</div>
-        <div class="stat-lbl">Queries</div>
+        <div class="stat-num" style="color:var(--neon-cyan);">{st.session_state.questions}</div>
+        <div class="stat-lbl">Queries Executed</div>
     </div>
     <div class="stat-cell">
-        <div class="stat-num b">{len(st.session_state.messages)//2}</div>
-        <div class="stat-lbl">Exchanges</div>
+        <div class="stat-num" style="color:var(--neon-purple);">{len(st.session_state.messages)//2}</div>
+        <div class="stat-lbl">Neural Exchanges</div>
     </div>
     <div class="stat-cell">
-        <div class="stat-num c">{avg:.1f}s</div>
-        <div class="stat-lbl">Avg Latency</div>
+        <div class="stat-num" style="color:var(--neon-green);">{avg:.1f}s</div>
+        <div class="stat-lbl">Avg Response Latency</div>
     </div>
     <div class="stat-cell">
-        <div class="stat-num d">{st.session_state.src_total}</div>
-        <div class="stat-lbl">Chunks Retrieved</div>
+        <div class="stat-num" style="color:var(--neon-orange);">{st.session_state.src_total}</div>
+        <div class="stat-lbl">Vector Chunks Sourced</div>
     </div>
 </div>
 """, unsafe_allow_html=True)
-
-st.markdown("<br>", unsafe_allow_html=True)
 
 # ══════════════════════════════════════════════
 # TABS
 # ══════════════════════════════════════════════
 
-tab1, tab2, tab3, tab4 = st.tabs(["Chat", "Ingest", "Evaluation", "System"])
+tab1, tab2, tab3, tab4 = st.tabs(["Neural Chat", "Data Ingestion", "System Diagnostics", "Architecture"])
 
 
 # ════════════════════════════════════════════════
@@ -830,17 +628,16 @@ with tab1:
     col_tog, _ = st.columns([2, 8])
     with col_tog:
         st.session_state.use_stream = st.toggle(
-            "Streaming mode", value=st.session_state.use_stream)
+            "Enable SSE Streaming", value=st.session_state.use_stream)
 
     if not st.session_state.messages:
         st.markdown("""
         <div class="empty-state">
-            <span class="empty-mark">◈</span>
-            <div class="empty-head">Knowledge base is ready</div>
+            <span class="empty-mark">⬡</span>
+            <div class="empty-head">Neural Matrix Initialized</div>
             <div class="empty-sub">
-                Send a query below &nbsp;·&nbsp;
-                Upload documents in Ingest &nbsp;·&nbsp;
-                Check Evaluation for quality scores
+                Input queries to access the enterprise knowledge base.<br>
+                Model context window optimized for dense retrieval.
             </div>
         </div>
         """, unsafe_allow_html=True)
@@ -850,7 +647,7 @@ with tab1:
                 st.markdown(f"""
                 <div class="msg-u-wrap">
                     <div class="msg-u-inner">
-                        <div class="msg-u-lbl">You</div>
+                        <div class="msg-u-lbl">Operator</div>
                         <div class="msg-u-bubble">{msg['content']}</div>
                     </div>
                 </div>
@@ -858,7 +655,7 @@ with tab1:
             else:
                 st.markdown("""
                 <div class="msg-b-lbl">
-                    <span class="msg-b-lbl-dot"></span>NEXUS
+                    <span class="msg-b-lbl-dot"></span>NEXUS Core
                 </div>
                 """, unsafe_allow_html=True)
                 st.markdown(f"""
@@ -871,25 +668,25 @@ with tab1:
                 if rt:
                     st.markdown(f"""
                     <div class="msg-meta">
-                        <span class="meta-dot"></span>
-                        {rt:.2f}s &nbsp;·&nbsp; {sc} chunk{'s' if sc != 1 else ''} &nbsp;·&nbsp; hybrid retrieval
+                        <span style="color:var(--neon-cyan)">⚡</span>
+                        {rt:.2f}s latency &nbsp;·&nbsp; {sc} vector{'s' if sc != 1 else ''} retrieved &nbsp;·&nbsp; Hybrid Fusion
                     </div>
                     """, unsafe_allow_html=True)
                 srcs = msg.get("sources", [])
                 if srcs:
-                    with st.expander(f"Sources — {len(srcs)} chunks retrieved"):
+                    with st.expander(f"Inspect Data Sources [{len(srcs)} found]"):
                         for j, src in enumerate(srcs, 1):
                             text = extract_src_text(src)
                             meta = extract_src_meta(src)
                             st.markdown(f"""
                             <div class="src-card">
-                                <div class="src-lbl">Chunk {j:02d}</div>
-                                {f'<div class="src-origin">{meta}</div>' if meta else ''}
+                                <div class="src-lbl">Node Context {j:02d}</div>
+                                {f'<div style="font-family:Fira Code,monospace;font-size:0.55rem;color:var(--text-dim);margin-bottom:8px;">{meta}</div>' if meta else ''}
                                 <div class="src-txt">{text}</div>
                             </div>
                             """, unsafe_allow_html=True)
 
-    question = st.chat_input("Ask about company policies, procedures, or uploaded documents...")
+    question = st.chat_input("Query the organizational neural net...")
 
     if question:
         st.session_state.questions += 1
@@ -898,12 +695,12 @@ with tab1:
         st.markdown(f"""
         <div class="msg-u-wrap">
             <div class="msg-u-inner">
-                <div class="msg-u-lbl">You</div>
+                <div class="msg-u-lbl">Operator</div>
                 <div class="msg-u-bubble">{question}</div>
             </div>
         </div>
         """, unsafe_allow_html=True)
-        st.markdown('<div class="msg-b-lbl"><span class="msg-b-lbl-dot"></span>NEXUS</div>', unsafe_allow_html=True)
+        st.markdown('<div class="msg-b-lbl"><span class="msg-b-lbl-dot"></span>NEXUS Core</div>', unsafe_allow_html=True)
 
         t0 = time.time(); full_answer = ""; sources = []; streamed_ok = False
 
@@ -930,7 +727,7 @@ with tab1:
             except: streamed_ok = False
 
         if not st.session_state.use_stream or not streamed_ok:
-            with st.spinner(""):
+            with st.spinner("Processing semantics..."):
                 try:
                     res = requests.post(ASK_URL, json={"question":question,"session_id":st.session_state.session_id}, timeout=30)
                     if res.status_code == 200:
@@ -938,9 +735,9 @@ with tab1:
                     else:
                         full_answer = f"Backend error {res.status_code}."
                 except requests.exceptions.Timeout:
-                    full_answer = "Request timed out. Try again."
+                    full_answer = "Timeout exception during inference. Retry."
                 except Exception as e:
-                    full_answer = f"Error: {str(e)}"
+                    full_answer = f"Fatal system error: {str(e)}"
             st.markdown(f'<div class="msg-b-wrap"><div class="msg-b-bubble">{full_answer}</div></div>', unsafe_allow_html=True)
 
         elapsed = time.time() - t0
@@ -949,19 +746,19 @@ with tab1:
 
         st.markdown(f"""
         <div class="msg-meta">
-            <span class="meta-dot"></span>
-            {elapsed:.2f}s &nbsp;·&nbsp; {len(sources)} chunk{'s' if len(sources)!=1 else ''} &nbsp;·&nbsp; hybrid retrieval
+            <span style="color:var(--neon-cyan)">⚡</span>
+            {elapsed:.2f}s latency &nbsp;·&nbsp; {len(sources)} vector{'s' if len(sources)!=1 else ''} retrieved &nbsp;·&nbsp; Hybrid Fusion
         </div>
         """, unsafe_allow_html=True)
 
         if sources:
-            with st.expander(f"Sources — {len(sources)} chunks retrieved"):
+            with st.expander(f"Inspect Data Sources [{len(sources)} found]"):
                 for j, src in enumerate(sources, 1):
                     text = extract_src_text(src); meta = extract_src_meta(src)
                     st.markdown(f"""
                     <div class="src-card">
-                        <div class="src-lbl">Chunk {j:02d}</div>
-                        {f'<div class="src-origin">{meta}</div>' if meta else ''}
+                        <div class="src-lbl">Node Context {j:02d}</div>
+                        {f'<div style="font-family:Fira Code,monospace;font-size:0.55rem;color:var(--text-dim);margin-bottom:8px;">{meta}</div>' if meta else ''}
                         <div class="src-txt">{text}</div>
                     </div>
                     """, unsafe_allow_html=True)
@@ -972,9 +769,9 @@ with tab1:
         })
         st.rerun()
 
-    col_c, _ = st.columns([1,9])
+    col_c, _ = st.columns([2,8])
     with col_c:
-        if st.button("Clear"):
+        if st.button("Purge Memory"):
             st.session_state.messages=[]; st.session_state.questions=0
             st.session_state.time_total=0.0; st.session_state.src_total=0
             st.session_state.session_id=f"nx_{str(uuid.uuid4())[:8]}"
@@ -986,93 +783,95 @@ with tab1:
 # ════════════════════════════════════════════════
 
 with tab2:
-
     st.markdown("""
-    <div style="margin-bottom:22px;">
-        <div style="font-family:'Playfair Display',serif;font-weight:600;font-size:1.1rem;color:#1a1714;margin-bottom:5px;">
-            Document Ingestion
+    <div style="margin-bottom:24px;">
+        <div style="font-weight:600;font-size:1.4rem;color:var(--text-main);margin-bottom:8px;text-shadow:0 0 10px rgba(255,255,255,0.1);">
+            Knowledge Pipeline Ingestion
         </div>
-        <div style="font-family:'DM Mono',monospace;font-size:0.6rem;color:#9b9088;">
-            PDF &nbsp;·&nbsp; TXT &nbsp;·&nbsp; Max 5MB recommended &nbsp;·&nbsp;
-            Chunked at 500 tokens &nbsp;·&nbsp; Indexed in Pinecone + BM25
+        <div style="font-family:'Fira Code',monospace;font-size:0.7rem;color:var(--text-muted);line-height:1.6;">
+            [SUPPORTED PROTOCOLS: PDF, TXT] &nbsp;·&nbsp; [LIMIT: 5MB MAX]<br>
+            Payloads undergo recursive character splitting (500 tokens) before Pinecone + BM25 indexing.
         </div>
     </div>
     """, unsafe_allow_html=True)
 
-    col1, col2 = st.columns([3, 2])
+    col1, col2 = st.columns([3, 2], gap="large")
 
     with col1:
-        uploaded_file = st.file_uploader("Drop file", type=["pdf","txt"], label_visibility="collapsed")
+        uploaded_file = st.file_uploader("Upload Payload", type=["pdf","txt"], label_visibility="collapsed")
 
         if uploaded_file:
             size_kb = len(uploaded_file.getvalue()) / 1024
             size_mb = size_kb / 1024
             if size_mb > 5:
-                st.warning(f"File is {size_mb:.1f}MB — may timeout on free-tier. Recommended: under 5MB.")
+                st.warning(f"File payload is {size_mb:.1f}MB. Free-tier timeouts may occur.")
+            
             st.markdown(f"""
-            <div style="font-family:'DM Mono',monospace;font-size:0.65rem;color:#c84b2f;
-                        background:white;border:1px solid rgba(26,23,20,0.1);
-                        border-left:3px solid #c84b2f;border-radius:0 4px 4px 0;
-                        padding:10px 14px;margin:10px 0;">
-                &#9679;&nbsp; {uploaded_file.name} &nbsp;·&nbsp; {size_kb:.0f} KB
+            <div style="font-family:'Fira Code',monospace;font-size:0.75rem;color:var(--neon-cyan);
+                        background:rgba(0, 229, 255, 0.05);border:1px solid rgba(0, 229, 255, 0.2);
+                        border-left:3px solid var(--neon-cyan);border-radius:4px;
+                        padding:14px 18px;margin:16px 0;box-shadow:0 0 10px rgba(0, 229, 255, 0.1);">
+                &#9679;&nbsp; PAYLOAD DETECTED: {uploaded_file.name} [{size_kb:.0f} KB]
             </div>
             """, unsafe_allow_html=True)
 
-            if st.button("Index Document"):
-                with st.spinner("Ingesting..."):
+            if st.button("Execute Indexing"):
+                with st.spinner("Encrypting and transferring payload..."):
                     try:
                         files = {"file":(uploaded_file.name,uploaded_file.getvalue(),uploaded_file.type)}
                         resp  = requests.post(UPLOAD_URL, files=files, timeout=180)
                         if resp.status_code == 200:
                             data = resp.json()
-                            st.success(f"Indexed {data.get('total_chunks',0)} chunks · BM25 corpus: {data.get('bm25_corpus',0)}")
+                            st.success(f"Indexed {data.get('total_chunks',0)} chunks into vector space.")
                             if uploaded_file.name not in st.session_state.uploaded_docs:
                                 st.session_state.uploaded_docs.append(uploaded_file.name)
                         elif resp.status_code == 413:
-                            st.error("File too large. Max 10MB.")
+                            st.error("Payload exceeded structural limits (10MB).")
                         else:
-                            st.error(f"Upload failed: {resp.status_code}")
+                            st.error(f"Transfer failed. Error code: {resp.status_code}")
                     except Exception as e:
-                        st.error(f"Error: {str(e)}")
+                        st.error(f"System Exception: {str(e)}")
 
         st.markdown("""
-        <div class="ingest-note">
-            Files split via RecursiveCharacterTextSplitter (chunk=500, overlap=100).<br>
-            Each chunk indexed in Pinecone (vector) AND BM25 (keyword) simultaneously.<br>
-            Hybrid retrieval merges both using Reciprocal Rank Fusion at query time.
+        <div style="font-family:'Fira Code',monospace;font-size:0.65rem;color:var(--text-muted);
+                    background:rgba(0,0,0,0.3); border:1px solid var(--bdr-color);
+                    border-left:3px solid var(--neon-purple); border-radius:4px;
+                    padding:16px; margin-top:24px; line-height:1.9;">
+            <span style="color:var(--neon-purple);">> INGESTION_PROTOCOL_ACTIVE</span><br>
+            Vector embeddings generated concurrently with BM25 keyword indices. Query retrieval will execute Reciprocal Rank Fusion on both data sets.
         </div>
         """, unsafe_allow_html=True)
 
     with col2:
         st.markdown("""
-        <div style="background:white;border:1px solid rgba(26,23,20,0.10);
-                    border-radius:6px;padding:20px;box-shadow:0 2px 16px rgba(26,23,20,0.08);">
-            <div style="font-family:'DM Mono',monospace;font-size:0.52rem;color:#9b9088;
-                        text-transform:uppercase;letter-spacing:0.12em;margin-bottom:14px;
-                        padding-bottom:10px;border-bottom:1px solid rgba(26,23,20,0.06);">
-                Indexed This Session
+        <div class="sec-card" style="padding:16px;">
+            <div style="font-family:'Fira Code',monospace;font-size:0.6rem;color:var(--text-dim);
+                        text-transform:uppercase;letter-spacing:0.15em;margin-bottom:16px;
+                        padding-bottom:12px;border-bottom:1px solid var(--bdr-color);">
+                Current Session Ledger
             </div>
-        </div>
         """, unsafe_allow_html=True)
 
         if st.session_state.uploaded_docs:
             for d in st.session_state.uploaded_docs:
                 st.markdown(f"""
-                <div style="display:flex;align-items:center;gap:8px;font-family:'DM Mono',monospace;
-                            font-size:0.62rem;color:#2d6a4f;padding:6px 0;
-                            border-bottom:1px solid rgba(26,23,20,0.06);">
-                    <span style="width:5px;height:5px;border-radius:50%;background:#2d6a4f;
-                                 flex-shrink:0;display:inline-block;"></span>{d}
+                <div style="display:flex;align-items:center;gap:10px;font-family:'Fira Code',monospace;
+                            font-size:0.7rem;color:var(--neon-green);padding:8px 0;
+                            border-bottom:1px solid rgba(255,255,255,0.05);">
+                    <span style="width:6px;height:6px;border-radius:50%;background:var(--neon-green);
+                                 box-shadow:0 0 8px var(--neon-green);flex-shrink:0;"></span>
+                    {d}
                 </div>
                 """, unsafe_allow_html=True)
         else:
-            st.markdown("""<div style="font-family:'DM Mono',monospace;font-size:0.62rem;color:#c8c0b8;padding:4px 0;">No documents this session</div>""", unsafe_allow_html=True)
+            st.markdown("""<div style="font-family:'Fira Code',monospace;font-size:0.7rem;color:var(--text-dim);padding:8px 0;text-align:center;">[ NO DATA FRAGMENTS DETECTED ]</div>""", unsafe_allow_html=True)
 
         st.markdown(f"""
-        <div style="font-family:'DM Mono',monospace;font-size:0.56rem;color:#c8c0b8;
-                    margin-top:14px;padding-top:12px;border-top:1px solid rgba(26,23,20,0.06);line-height:2;">
-            SESSION ID<br>
-            <span style="color:#9b9088;">{st.session_state.session_id}</span>
+            <div style="font-family:'Fira Code',monospace;font-size:0.65rem;color:var(--text-dim);
+                        margin-top:20px;padding-top:16px;border-top:1px dashed rgba(255,255,255,0.1);line-height:2;">
+                SYS_SESSION_ID<br>
+                <span style="color:var(--text-main);">{st.session_state.session_id}</span>
+            </div>
         </div>
         """, unsafe_allow_html=True)
 
@@ -1082,40 +881,42 @@ with tab2:
 # ════════════════════════════════════════════════
 
 with tab3:
-
     st.markdown("""
-    <div class="eval-section-title">RAG Quality Evaluation</div>
-    <div class="eval-section-sub">
-        RAGAS measures retrieval and answer quality across 4 metrics.<br>
-        TruLens measures groundedness and contextual relevance across 3 metrics.<br>
-        5 ground truth Q&amp;A pairs · Groq LLM as judge · ~60 seconds to complete.
+    <div style="margin-bottom:24px;">
+        <div style="font-weight:600;font-size:1.4rem;color:var(--text-main);margin-bottom:8px;">
+            RAG Integrity Diagnostics
+        </div>
+        <div style="font-family:'Fira Code',monospace;font-size:0.7rem;color:var(--text-muted);line-height:1.6;">
+            RAGAS framework executing 4-dimensional retrieval evaluation.<br>
+            TruLens verifying groundedness and contextual integrity. Engine: Groq LLM Judge.
+        </div>
     </div>
     """, unsafe_allow_html=True)
 
     col_btn, col_info = st.columns([2, 5])
     with col_btn:
-        run_eval = st.button("Run Evaluation", use_container_width=True)
+        run_eval = st.button("Initiate Diagnostics", use_container_width=True)
     with col_info:
         st.markdown("""
-        <div style="font-family:'DM Mono',monospace;font-size:0.58rem;color:#9b9088;padding-top:10px;line-height:1.8;">
-            Runs 5 predefined questions through the full RAG pipeline.<br>
-            Results cached until next run.
+        <div style="font-family:'Fira Code',monospace;font-size:0.65rem;color:var(--text-dim);padding-top:10px;line-height:1.8;">
+            > Est. completion time: ~60.00s <br>
+            > Caching results for persistent verification...
         </div>
         """, unsafe_allow_html=True)
 
     if run_eval:
-        with st.spinner("Running evaluation — this takes about 60 seconds..."):
+        with st.spinner("Running deep evaluation matrices..."):
             try:
                 resp = requests.post(EVALUATE_URL, timeout=180)
                 if resp.status_code == 200:
                     st.session_state.eval_results = resp.json()
-                    st.success("Evaluation complete!")
+                    st.success("Diagnostics Complete. Matrix updated.")
                 else:
-                    st.error(f"Evaluation failed: {resp.status_code}")
+                    st.error(f"Diagnostics failed. Status Code: {resp.status_code}")
             except requests.exceptions.Timeout:
-                st.warning("Timed out — free-tier server is slow. Try again.")
+                st.warning("Timeout threshold reached on Groq judge node. Please retry.")
             except Exception as e:
-                st.error(f"Error: {str(e)}")
+                st.error(f"Critical diagnostic failure: {str(e)}")
 
     if st.session_state.eval_results:
         res     = st.session_state.eval_results
@@ -1125,121 +926,89 @@ with tab3:
         ts      = trulens.get("scores", {})
 
         st.markdown("<br>", unsafe_allow_html=True)
-        col1, col2 = st.columns(2)
+        col1, col2 = st.columns(2, gap="large")
 
         with col1:
             st.markdown("""
-            <div class="score-panel">
-                <div class="score-panel-label">
-                    <span class="tool-dot" style="background:#1e3a5f;"></span>
-                    RAGAS Metrics
+            <div class="sec-card">
+                <div style="font-family:'Fira Code',monospace;font-size:0.7rem;color:var(--neon-blue);
+                            text-transform:uppercase;letter-spacing:0.15em;margin-bottom:20px;
+                            display:flex;align-items:center;gap:10px;">
+                    <span style="width:8px;height:8px;background:var(--neon-blue);box-shadow:0 0 10px var(--neon-blue);"></span>
+                    RAGAS telemetry
                 </div>
-            </div>
             """, unsafe_allow_html=True)
-            with st.container():
-                for k, label in [("faithfulness","Faithfulness"),("answer_relevancy","Answer Relevancy"),
-                                  ("context_precision","Context Precision"),("context_recall","Context Recall")]:
-                    render_score(label, rs.get(k, 0))
+            for k, label in [("faithfulness","Faithfulness"),("answer_relevancy","Answer Relevancy"),
+                              ("context_precision","Context Precision"),("context_recall","Context Recall")]:
+                render_score(label, rs.get(k, 0))
 
             ov_r = rs.get("overall", 0)
+            col_ovr = score_color(ov_r)
             st.markdown(f"""
-            <div class="overall-panel">
-                <div class="overall-big">{ov_r:.2f}</div>
-                <div class="overall-sub">RAGAS Overall &nbsp;·&nbsp; {score_label(ov_r)}</div>
+                <div style="background:rgba(0,0,0,0.4);border-radius:8px;padding:20px;text-align:center;margin-top:20px;border:1px solid rgba(255,255,255,0.05);">
+                    <div style="font-weight:700;font-size:3rem;line-height:1;color:{col_ovr};text-shadow:0 0 15px {col_ovr};">{ov_r:.2f}</div>
+                    <div style="font-family:'Fira Code',monospace;font-size:0.6rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.15em;margin-top:10px;">RAGAS Overall · {score_label(ov_r)}</div>
+                </div>
             </div>
             """, unsafe_allow_html=True)
 
         with col2:
             st.markdown("""
-            <div class="score-panel">
-                <div class="score-panel-label">
-                    <span class="tool-dot" style="background:#b5621e;"></span>
-                    TruLens Metrics
+            <div class="sec-card">
+                <div style="font-family:'Fira Code',monospace;font-size:0.7rem;color:var(--neon-purple);
+                            text-transform:uppercase;letter-spacing:0.15em;margin-bottom:20px;
+                            display:flex;align-items:center;gap:10px;">
+                    <span style="width:8px;height:8px;background:var(--neon-purple);box-shadow:0 0 10px var(--neon-purple);"></span>
+                    TruLens Integrity
                 </div>
-            </div>
             """, unsafe_allow_html=True)
-            with st.container():
-                for k, label in [("groundedness","Groundedness"),("answer_relevance","Answer Relevance"),
-                                  ("context_relevance","Context Relevance")]:
-                    render_score(label, ts.get(k, 0))
+            for k, label in [("groundedness","Groundedness"),("answer_relevance","Answer Relevance"),
+                              ("context_relevance","Context Relevance")]:
+                render_score(label, ts.get(k, 0))
 
             ov_t = ts.get("overall", 0)
+            col_ovt = score_color(ov_t)
             st.markdown(f"""
-            <div class="overall-panel">
-                <div class="overall-big">{ov_t:.2f}</div>
-                <div class="overall-sub">TruLens Overall &nbsp;·&nbsp; {score_label(ov_t)}</div>
+                <div style="background:rgba(0,0,0,0.4);border-radius:8px;padding:20px;text-align:center;margin-top:20px;border:1px solid rgba(255,255,255,0.05);">
+                    <div style="font-weight:700;font-size:3rem;line-height:1;color:{col_ovt};text-shadow:0 0 15px {col_ovt};">{ov_t:.2f}</div>
+                    <div style="font-family:'Fira Code',monospace;font-size:0.6rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.15em;margin-top:10px;">TruLens Overall · {score_label(ov_t)}</div>
+                </div>
             </div>
             """, unsafe_allow_html=True)
-
-        st.markdown("<br>", unsafe_allow_html=True)
-
-        with st.expander("Per-question RAGAS scores"):
-            for item in ragas.get("per_question", []):
-                f=item.get("faithfulness",0); ar=item.get("answer_relevancy",0)
-                cp=item.get("context_precision",0); cr=item.get("context_recall",0)
-                st.markdown(f"""
-                <div class="q-entry">
-                    <div class="q-text">{item['question']}</div>
-                    <div class="q-badges">
-                        <span class="q-badge" style="background:#e8eef5;color:#1e3a5f;">Faith {f:.2f}</span>
-                        <span class="q-badge" style="background:#e8f4ee;color:#2d6a4f;">Ans Rel {ar:.2f}</span>
-                        <span class="q-badge" style="background:#e8eef5;color:#1e3a5f;">Ctx Pre {cp:.2f}</span>
-                        <span class="q-badge" style="background:#f5ede4;color:#b5621e;">Ctx Rec {cr:.2f}</span>
-                    </div>
-                </div>
-                """, unsafe_allow_html=True)
-
-        with st.expander("Per-question TruLens scores"):
-            for item in trulens.get("per_question", []):
-                gs=item.get("groundedness",0); ar=item.get("answer_relevance",0); cr=item.get("context_relevance",0)
-                st.markdown(f"""
-                <div class="q-entry">
-                    <div class="q-text">{item['question']}</div>
-                    <div style="font-family:'DM Mono',monospace;font-size:0.62rem;color:#9b9088;margin:4px 0 8px;">{item.get('answer','')[:120]}…</div>
-                    <div class="q-badges">
-                        <span class="q-badge" style="background:#f5ede4;color:#b5621e;">Ground {gs:.2f}</span>
-                        <span class="q-badge" style="background:#e8f4ee;color:#2d6a4f;">Ans Rel {ar:.2f}</span>
-                        <span class="q-badge" style="background:#e8eef5;color:#1e3a5f;">Ctx Rel {cr:.2f}</span>
-                    </div>
-                </div>
-                """, unsafe_allow_html=True)
 
     else:
         st.markdown("""
-        <div style="text-align:center;padding:4rem 2rem;border:2px dashed rgba(26,23,20,0.08);border-radius:6px;margin-top:16px;">
-            <div style="font-family:'Playfair Display',serif;font-style:italic;font-size:3rem;color:rgba(26,23,20,0.08);margin-bottom:16px;">◈</div>
-            <div style="font-family:'Playfair Display',serif;font-weight:600;font-size:1rem;color:#9b9088;">No evaluation run yet</div>
-            <div style="font-family:'DM Mono',monospace;font-size:0.6rem;color:#c8c0b8;margin-top:6px;">Click Run Evaluation above to score the RAG pipeline</div>
+        <div style="text-align:center;padding:5rem 2rem;border:1px dashed var(--bdr-color);border-radius:12px;margin-top:20px;background:rgba(0,0,0,0.2);">
+            <div style="font-size:3rem;color:var(--text-dim);margin-bottom:20px;">⚡</div>
+            <div style="font-weight:600;font-size:1.2rem;color:var(--text-muted);">Awaiting Telemetry Execution</div>
+            <div style="font-family:'Fira Code',monospace;font-size:0.7rem;color:var(--text-dim);margin-top:10px;">Run Diagnostics to analyze vector semantic accuracy</div>
         </div>
         """, unsafe_allow_html=True)
 
 
 # ════════════════════════════════════════════════
-# TAB 4 — SYSTEM
+# TAB 4 — ARCHITECTURE
 # ════════════════════════════════════════════════
 
 with tab4:
-
-    col1, col2 = st.columns(2)
+    col1, col2 = st.columns(2, gap="large")
 
     with col1:
         st.markdown("""
         <div class="sec-card">
             <div class="sec-card-title">
-                <span class="accent-rule"></span>Hybrid RAG Pipeline
+                <span class="accent-rule"></span>Neural RAG Pipeline
             </div>
-            <div class="sec-card-body">
-                USER QUERY<br>
-                &darr;&nbsp; multi-query rewriting via Groq<br>
-                HYBRID RETRIEVAL<br>
-                &darr;&nbsp; Pinecone vector search (cosine)<br>
-                &darr;&nbsp; BM25 keyword search (in-memory)<br>
-                RRF FUSION<br>
-                &darr;&nbsp; Reciprocal Rank Fusion merge<br>
-                GUARDRAIL &darr;&nbsp; score threshold 0.30<br>
-                LLM GENERATION<br>
-                &darr;&nbsp; Gemini 2.5 Flash + Groq fallback<br>
-                STREAMING ANSWER + CITATIONS
+            <div class="sec-card-body" style="color:var(--neon-cyan) !important;">
+                [QUERY_RECEIVED]<br>
+                <span style="color:var(--text-dim);">├─</span> Multi-query rewriting (Groq LLM)<br>
+                <span style="color:var(--text-dim);">├─</span> [HYBRID_RETRIEVAL_ACTIVE]<br>
+                <span style="color:var(--text-dim);">│  ├─</span> Pinecone Vector Graph (Cosine Dist)<br>
+                <span style="color:var(--text-dim);">│  └─</span> BM25 Lexical Keyword Memory<br>
+                <span style="color:var(--text-dim);">├─</span> [RRF_FUSION_MERGE]<br>
+                <span style="color:var(--text-dim);">├─</span> Contextual Guardrails (Threshold > 0.30)<br>
+                <span style="color:var(--text-dim);">└─</span> [GENERATION]<br>
+                &nbsp;&nbsp;&nbsp; Gemini 2.5 Flash + SSE Stream Out
             </div>
         </div>
         """, unsafe_allow_html=True)
@@ -1248,19 +1017,17 @@ with tab4:
         st.markdown(f"""
         <div class="sec-card">
             <div class="sec-card-title">
-                <span class="accent-rule"></span>Stack
+                <span class="accent-rule" style="background:var(--neon-purple);box-shadow:0 0 8px var(--neon-purple);"></span>Stack Configuration
             </div>
-            <div class="sec-card-body">
-                BACKEND &nbsp;&nbsp;&nbsp;&nbsp; FastAPI + Uvicorn · Railway<br>
-                FRONTEND &nbsp;&nbsp;&nbsp; Streamlit Cloud<br>
-                VECTOR DB &nbsp;&nbsp; Pinecone serverless · 3072-dim<br>
-                KEYWORD &nbsp;&nbsp;&nbsp;&nbsp; rank-bm25 (in-memory)<br>
-                FUSION &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Reciprocal Rank Fusion<br>
-                EMBED &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; gemini-embedding-001<br>
-                LLM PRIMARY &nbsp;Gemini 2.5 Flash<br>
-                LLM FALLBACK Groq llama-3.1-8b-instant<br>
-                EVALUATION &nbsp; RAGAS + TruLens (Groq judge)<br>
-                SESSION &nbsp;&nbsp;&nbsp;&nbsp; {st.session_state.session_id}
+            <div class="sec-card-body" style="display: grid; grid-template-columns: 120px 1fr; gap: 4px;">
+                <span style="color:var(--text-muted);">FRONTEND</span> <span style="color:var(--text-main);">Streamlit / Migrating to Vercel UI</span>
+                <span style="color:var(--text-muted);">API CORE</span> <span style="color:var(--text-main);">FastAPI / Uvicorn Edge</span>
+                <span style="color:var(--text-muted);">AUTH / DB</span> <span style="color:var(--text-main);">Firebase Integration Module</span>
+                <span style="color:var(--text-muted);">VECTOR DB</span> <span style="color:var(--text-main);">Pinecone Serverless (3072-dim)</span>
+                <span style="color:var(--text-muted);">EMBEDDER</span> <span style="color:var(--text-main);">gemini-embedding-001</span>
+                <span style="color:var(--text-muted);">PRIMARY LLM</span> <span style="color:var(--text-main);">Gemini 2.5 Flash API</span>
+                <span style="color:var(--text-muted);">FALLBACK</span> <span style="color:var(--text-main);">Groq llama-3.1-8b-instant</span>
+                <span style="color:var(--text-muted);">SESSION</span> <span style="color:var(--text-main);">{st.session_state.session_id}</span>
             </div>
         </div>
         """, unsafe_allow_html=True)
@@ -1268,19 +1035,19 @@ with tab4:
     st.markdown("""
     <div class="sec-card">
         <div class="sec-card-title">
-            <span class="accent-rule"></span>Roadmap
+            <span class="accent-rule" style="background:var(--neon-green);box-shadow:0 0 8px var(--neon-green);"></span>Development Matrix Roadmap
         </div>
         <div class="feat-grid">
-            <div class="feat-item done"><span class="feat-dot"></span>Streaming Responses (SSE)</div>
-            <div class="feat-item done"><span class="feat-dot"></span>Hybrid BM25 + Vector Retrieval</div>
-            <div class="feat-item done"><span class="feat-dot"></span>RAGAS Evaluation Pipeline</div>
-            <div class="feat-item done"><span class="feat-dot"></span>TruLens Quality Tracing</div>
-            <div class="feat-item done"><span class="feat-dot"></span>Reciprocal Rank Fusion</div>
-            <div class="feat-item done"><span class="feat-dot"></span>Multi-query Rewriting</div>
-            <div class="feat-item"><span class="feat-dot"></span>Redis Conversation Memory</div>
-            <div class="feat-item"><span class="feat-dot"></span>Multi-Agent LangGraph</div>
+            <div class="feat-item done"><span class="feat-dot"></span>SSE Streaming Protocols</div>
+            <div class="feat-item done"><span class="feat-dot"></span>BM25 + Vector Fusion</div>
+            <div class="feat-item done"><span class="feat-dot"></span>RAGAS Deep Evaluation</div>
+            <div class="feat-item done"><span class="feat-dot"></span>TruLens Quality Guards</div>
+            <div class="feat-item done"><span class="feat-dot"></span>Reciprocal Rank Scaling</div>
+            <div class="feat-item done"><span class="feat-dot"></span>LLM Multi-query Translation</div>
+            <div class="feat-item"><span class="feat-dot"></span>Firebase Authentication Lock</div>
+            <div class="feat-item"><span class="feat-dot"></span>Vercel Edge Deployment</div>
             <div class="feat-item"><span class="feat-dot"></span>Cross-encoder Re-ranking</div>
-            <div class="feat-item"><span class="feat-dot"></span>DOCX / HTML / CSV Ingestion</div>
+            <div class="feat-item"><span class="feat-dot"></span>LangGraph Agent Support</div>
         </div>
     </div>
     """, unsafe_allow_html=True)
