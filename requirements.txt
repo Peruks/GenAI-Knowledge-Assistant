@@ -3,7 +3,7 @@ uvicorn[standard]
 python-multipart
 
 pinecone
-
+rank-bm25
 google-genai
 
 python-dotenv
