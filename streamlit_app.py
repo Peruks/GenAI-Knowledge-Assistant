@@ -96,7 +96,7 @@ section[data-testid="stSidebar"]{display:none !important;}
 .stTabs [aria-selected="true"]{color:var(--neon-cyan) !important;border-bottom:2px solid var(--neon-cyan) !important;}
 .stTabs [data-baseweb="tab-highlight"]{display:none !important;}
 
-/* ── CHAT MESSAGES ── */
+/* ── CHAT ── */
 .msg-u-wrap{display:flex;justify-content:flex-end;margin:28px 0;animation:fadeSlideLeft .5s cubic-bezier(0.2,0.8,0.2,1) forwards;}
 .msg-u-inner{max-width:65%;}
 .msg-u-bubble{background:rgba(255,255,255,0.02);border:1px solid var(--bdr-strong);border-right:3px solid var(--neon-purple);color:var(--text-main) !important;border-radius:8px 0 0 8px;padding:18px 24px;font-size:0.95rem;line-height:1.6;backdrop-filter:var(--glass-blur);}
@@ -108,7 +108,7 @@ section[data-testid="stSidebar"]{display:none !important;}
 .msg-b-bubble{background:linear-gradient(90deg,rgba(15,23,42,0.8) 0%,rgba(15,23,42,0.2) 100%);border:1px solid var(--bdr-color);border-left:3px solid var(--neon-cyan);border-radius:0 8px 8px 0;padding:24px;font-size:0.95rem;line-height:1.75;color:var(--text-main) !important;}
 .msg-b-bubble.agent{border-left:3px solid var(--neon-purple);}
 
-/* ── AGENT TRACE PANEL ── */
+/* ── AGENT TRACE ── */
 .agent-trace{background:rgba(139,92,246,0.05);border:1px solid rgba(139,92,246,0.2);border-radius:8px;padding:16px;margin:10px 0;}
 .agent-trace-title{font-family:'Fira Code',monospace !important;font-size:0.65rem;color:var(--neon-purple) !important;text-transform:uppercase;letter-spacing:0.12em;margin-bottom:12px;display:flex;align-items:center;gap:8px;}
 .agent-steps{display:flex;align-items:center;gap:0;flex-wrap:wrap;}
@@ -123,25 +123,37 @@ section[data-testid="stSidebar"]{display:none !important;}
 .agent-meta{display:flex;gap:12px;margin-top:12px;flex-wrap:wrap;}
 .agent-meta-item{font-family:'Fira Code',monospace !important;font-size:0.6rem;color:var(--text-muted) !important;background:rgba(0,0,0,0.3);padding:3px 10px;border-radius:3px;border:1px solid var(--bdr-color);}
 .agent-meta-item span{color:var(--neon-cyan);}
-
-/* ── PIPELINE SELECTOR ── */
-.pipeline-bar{display:flex;gap:8px;margin-bottom:20px;padding:12px 16px;background:var(--bg-panel);border:1px solid var(--bdr-color);border-radius:8px;}
-.pipeline-btn{font-family:'Fira Code',monospace !important;font-size:0.62rem;padding:6px 14px;border-radius:4px;border:1px solid var(--bdr-color);background:transparent;color:var(--text-muted) !important;cursor:pointer;text-transform:uppercase;letter-spacing:0.08em;transition:all .2s;}
-.pipeline-btn.active-std{border-color:var(--neon-cyan);background:rgba(0,229,255,0.08);color:var(--neon-cyan) !important;}
-.pipeline-btn.active-agent{border-color:var(--neon-purple);background:rgba(139,92,246,0.08);color:var(--neon-purple) !important;}
-
-/* ── VALIDATION SCORE BAR ── */
 .val-score-wrap{display:flex;align-items:center;gap:10px;margin-top:8px;}
 .val-score-label{font-family:'Fira Code',monospace !important;font-size:0.58rem;color:var(--text-dim) !important;text-transform:uppercase;width:80px;flex-shrink:0;}
 .val-score-track{flex:1;height:4px;background:rgba(255,255,255,0.05);border-radius:2px;overflow:hidden;}
 .val-score-fill{height:4px;border-radius:2px;}
 .val-score-num{font-family:'Fira Code',monospace !important;font-size:0.65rem;width:36px;text-align:right;flex-shrink:0;}
-
-/* ── SEARCH QUERIES PANEL ── */
 .queries-panel{background:rgba(0,0,0,0.2);border:1px solid var(--bdr-color);border-radius:6px;padding:14px 16px;margin-top:8px;}
 .query-item{font-family:'Fira Code',monospace !important;font-size:0.68rem;color:var(--text-muted) !important;padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.04);display:flex;align-items:flex-start;gap:8px;}
 .query-item:last-child{border-bottom:none;}
 .query-idx{color:var(--neon-cyan);flex-shrink:0;font-size:0.6rem;}
+
+/* ── LLM STATUS PANEL ── */
+.llm-status-panel{background:rgba(0,0,0,0.3);border:1px solid var(--bdr-color);border-radius:8px;padding:16px;margin-bottom:12px;}
+.llm-status-title{font-family:'Fira Code',monospace !important;font-size:0.65rem;color:var(--text-muted) !important;text-transform:uppercase;letter-spacing:0.12em;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--bdr-color);}
+.llm-row{display:flex;align-items:center;gap:12px;margin-bottom:10px;padding:8px 10px;border-radius:6px;border:1px solid var(--bdr-color);}
+.llm-row.primary{border-color:rgba(16,185,129,0.3);background:rgba(16,185,129,0.05);}
+.llm-row.fb1{border-color:rgba(245,158,11,0.2);background:rgba(245,158,11,0.04);}
+.llm-row.fb2{border-color:rgba(139,92,246,0.2);background:rgba(139,92,246,0.04);}
+.llm-rank{font-family:'Fira Code',monospace !important;font-size:0.55rem;padding:2px 7px;border-radius:3px;text-transform:uppercase;letter-spacing:0.08em;flex-shrink:0;}
+.llm-rank.primary{background:rgba(16,185,129,0.2);color:var(--neon-green) !important;}
+.llm-rank.fb1{background:rgba(245,158,11,0.15);color:var(--neon-amber) !important;}
+.llm-rank.fb2{background:rgba(139,92,246,0.15);color:var(--neon-purple) !important;}
+.llm-name{font-family:'Fira Code',monospace !important;font-size:0.72rem;color:var(--text-main) !important;flex:1;}
+.llm-quota{font-family:'Fira Code',monospace !important;font-size:0.58rem;color:var(--text-muted) !important;}
+.llm-status-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+
+/* ── AGENT LLM ROUTING TABLE ── */
+.routing-table{width:100%;border-collapse:collapse;font-family:'Fira Code',monospace !important;font-size:0.68rem;margin-top:8px;}
+.routing-table th{color:var(--text-dim) !important;text-transform:uppercase;letter-spacing:0.1em;padding:8px 10px;border-bottom:1px solid var(--bdr-color);text-align:left;font-weight:500;}
+.routing-table td{padding:8px 10px;border-bottom:1px solid rgba(255,255,255,0.03);color:var(--text-muted) !important;vertical-align:middle;}
+.routing-table tr:last-child td{border-bottom:none;}
+.routing-table td:first-child{color:var(--text-main) !important;font-weight:600;}
 
 /* ── MISC ── */
 .cur{display:inline-block;width:6px;height:1.1em;background:var(--neon-cyan);margin-left:6px;vertical-align:text-bottom;animation:pulse 0.8s infinite;box-shadow:0 0 10px var(--neon-cyan);}
@@ -210,15 +222,16 @@ section[data-testid="stSidebar"]{display:none !important;}
 # Session State
 # ─────────────────────────────────────────────
 
-if "messages"      not in st.session_state: st.session_state.messages      = []
-if "session_id"    not in st.session_state: st.session_state.session_id    = f"nx_{str(uuid.uuid4())[:8]}"
-if "questions"     not in st.session_state: st.session_state.questions     = 0
-if "time_total"    not in st.session_state: st.session_state.time_total    = 0.0
-if "src_total"     not in st.session_state: st.session_state.src_total     = 0
-if "uploaded_docs" not in st.session_state: st.session_state.uploaded_docs = []
-if "use_stream"    not in st.session_state: st.session_state.use_stream    = True
-if "eval_results"  not in st.session_state: st.session_state.eval_results  = None
-if "pipeline_mode" not in st.session_state: st.session_state.pipeline_mode = "standard"
+if "messages"       not in st.session_state: st.session_state.messages       = []
+if "session_id"     not in st.session_state: st.session_state.session_id     = f"nx_{str(uuid.uuid4())[:8]}"
+if "questions"      not in st.session_state: st.session_state.questions      = 0
+if "time_total"     not in st.session_state: st.session_state.time_total     = 0.0
+if "src_total"      not in st.session_state: st.session_state.src_total      = 0
+if "uploaded_docs"  not in st.session_state: st.session_state.uploaded_docs  = []
+if "use_stream"     not in st.session_state: st.session_state.use_stream     = True
+if "eval_results"   not in st.session_state: st.session_state.eval_results   = None
+if "pipeline_mode"  not in st.session_state: st.session_state.pipeline_mode  = "standard"
+if "nvidia_status"  not in st.session_state: st.session_state.nvidia_status  = None
 
 
 # ─────────────────────────────────────────────
@@ -261,7 +274,6 @@ def render_score(name: str, score: float):
     """, unsafe_allow_html=True)
 
 def render_agent_trace(result: dict):
-    """Render the agent execution trace panel."""
     agents_used      = result.get("agents_used", [])
     validation_score = result.get("validation_score", 0.0)
     search_queries   = result.get("search_queries", [])
@@ -270,14 +282,12 @@ def render_agent_trace(result: dict):
     strategy         = result.get("search_strategy", "")
     needs_clarif     = result.get("needs_clarification", False)
 
-    # Build agent steps HTML
     steps_html = ""
     for i, agent in enumerate(agents_used):
         steps_html += f'<span class="agent-node {agent}">{agent}</span>'
         if i < len(agents_used) - 1:
             steps_html += '<span class="agent-arrow">→</span>'
 
-    # Validation score bar
     val_col = score_color(validation_score)
     val_pct = int(validation_score * 100)
 
@@ -287,9 +297,7 @@ def render_agent_trace(result: dict):
 
     st.markdown(f"""
     <div class="agent-trace">
-        <div class="agent-trace-title">
-            ◈ Agent Execution Trace &nbsp; {clarif_badge}
-        </div>
+        <div class="agent-trace-title">◈ Agent Execution Trace &nbsp; {clarif_badge}</div>
         <div class="agent-steps">{steps_html}</div>
         <div class="val-score-wrap" style="margin-top:12px;">
             <div class="val-score-label">Validation</div>
@@ -307,7 +315,6 @@ def render_agent_trace(result: dict):
     </div>
     """, unsafe_allow_html=True)
 
-    # Search queries expander
     if search_queries:
         with st.expander("Planner-generated search queries"):
             queries_html = ""
@@ -340,9 +347,9 @@ st.markdown(f"""
         <span><em>Ask anything. Get grounded answers with source citations.</em></span>
         <div style="display:flex;gap:8px;flex-wrap:wrap;">
             {pipeline_tag}
-            <span class="mtag">Pinecone 3072-dim</span>
+            <span class="mtag">Groq Primary · NVIDIA · Gemini</span>
             <span class="mtag">BM25 + Vector · RRF</span>
-            <span class="mtag">RAGAS 0.93</span>
+            <span class="mtag">RAGAS · TruLens</span>
         </div>
     </div>
 </div>
@@ -380,14 +387,13 @@ with tab1:
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # Controls row
     col_stream, col_pipeline, col_clear = st.columns([3, 5, 2])
 
     with col_stream:
         st.session_state.use_stream = st.toggle(
             "Enable Streaming",
             value=st.session_state.use_stream,
-            help="Stream tokens in real-time (standard pipeline only)"
+            help="Stream tokens (standard pipeline only)"
         )
 
     with col_pipeline:
@@ -411,7 +417,6 @@ with tab1:
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # Chat history
     if not st.session_state.messages:
         st.markdown("""
         <div class="empty-state">
@@ -424,11 +429,9 @@ with tab1:
         for msg in st.session_state.messages:
             if msg["role"] == "user":
                 st.markdown(f"""
-                <div class="msg-u-wrap">
-                    <div class="msg-u-inner">
-                        <div class="msg-u-bubble">{msg['content']}</div>
-                    </div>
-                </div>
+                <div class="msg-u-wrap"><div class="msg-u-inner">
+                    <div class="msg-u-bubble">{msg['content']}</div>
+                </div></div>
                 """, unsafe_allow_html=True)
             else:
                 is_agent   = msg.get("pipeline") == "agent"
@@ -445,11 +448,9 @@ with tab1:
                 </div>
                 """, unsafe_allow_html=True)
 
-                # Agent trace for agent responses
                 if is_agent and msg.get("agent_result"):
                     render_agent_trace(msg["agent_result"])
 
-                # Sources
                 srcs = msg.get("sources", [])
                 rt   = msg.get("response_time", 0)
                 sc   = msg.get("source_count", 0)
@@ -457,7 +458,7 @@ with tab1:
                     with st.expander(f"Explore Synthesized Sources ({sc} chunks)"):
                         st.markdown(f"""
                         <div style="font-family:'Inter',sans-serif;font-size:0.85rem;color:var(--text-muted);margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid rgba(255,255,255,0.05);">
-                            Chunks Merged: <span style="color:var(--neon-cyan);">{sc}</span> | Pipeline: Hybrid (BM25 + Vector + RRF) | RTT: {rt:.2f}s
+                            Chunks Merged: <span style="color:var(--neon-cyan);">{sc}</span> | RTT: {rt:.2f}s
                         </div>
                         """, unsafe_allow_html=True)
                         for j, src in enumerate(srcs, 1):
@@ -471,7 +472,6 @@ with tab1:
                             </div>
                             """, unsafe_allow_html=True)
 
-    # ── Chat Input ──
     question = st.chat_input("Ask about company policies, documents, or knowledge base...")
 
     if question:
@@ -479,20 +479,17 @@ with tab1:
         st.session_state.messages.append({"role": "user", "content": question, "sources": []})
 
         st.markdown(f"""
-        <div class="msg-u-wrap">
-            <div class="msg-u-inner">
-                <div class="msg-u-bubble">{question}</div>
-            </div>
-        </div>
+        <div class="msg-u-wrap"><div class="msg-u-inner">
+            <div class="msg-u-bubble">{question}</div>
+        </div></div>
         """, unsafe_allow_html=True)
 
-        t0          = time.time()
-        full_answer = ""
-        sources     = []
+        t0           = time.time()
+        full_answer  = ""
+        sources      = []
         agent_result = None
         streamed_ok  = False
 
-        # ── AGENT PIPELINE ──
         if st.session_state.pipeline_mode == "agent":
             with st.spinner("Running 4-agent pipeline: Planner → Retriever → Validator → Answer..."):
                 try:
@@ -507,7 +504,7 @@ with tab1:
                         sources      = data.get("sources", [])
                         agent_result = data
                     else:
-                        full_answer = f"Agent pipeline error {res.status_code}. Falling back to standard."
+                        full_answer = f"Agent pipeline error {res.status_code}."
                 except Exception as e:
                     full_answer = f"Agent error: {str(e)}"
 
@@ -524,7 +521,6 @@ with tab1:
             if agent_result:
                 render_agent_trace(agent_result)
 
-        # ── STANDARD PIPELINE ──
         else:
             if st.session_state.use_stream:
                 placeholder = st.empty()
@@ -532,8 +528,7 @@ with tab1:
                     with requests.post(
                         STREAM_URL,
                         json={"question": question, "session_id": st.session_state.session_id},
-                        stream=True,
-                        timeout=60
+                        stream=True, timeout=60
                     ) as res:
                         if res.status_code == 200:
                             streamed_ok = True
@@ -602,14 +597,8 @@ with tab1:
         st.session_state.time_total += elapsed
         st.session_state.src_total  += len(sources)
 
-        # Sources
         if sources:
             with st.expander(f"Explore Synthesized Sources ({len(sources)} chunks)"):
-                st.markdown(f"""
-                <div style="font-family:'Inter',sans-serif;font-size:0.85rem;color:var(--text-muted);margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid rgba(255,255,255,0.05);">
-                    Chunks Merged: <span style="color:var(--neon-cyan);">{len(sources)}</span> | RTT: {elapsed:.2f}s
-                </div>
-                """, unsafe_allow_html=True)
                 for j, src in enumerate(sources, 1):
                     text = extract_src_text(src)
                     meta = extract_src_meta(src)
@@ -639,16 +628,14 @@ with tab1:
 # ════════════════════════════════════════════════
 
 with tab2:
-
     st.markdown("""
     <div style="margin-bottom:22px;">
         <div style="font-family:'Inter',sans-serif;font-weight:600;font-size:1.3rem;color:var(--text-main);margin-bottom:8px;">Document Ingestion</div>
-        <div style="font-family:'Fira Code',monospace;font-size:0.75rem;color:var(--text-muted);">PDF &nbsp;·&nbsp; TXT &nbsp;·&nbsp; Max 5MB recommended &nbsp;·&nbsp; Chunked at 500 tokens &nbsp;·&nbsp; Indexed in Pinecone + BM25</div>
+        <div style="font-family:'Fira Code',monospace;font-size:0.75rem;color:var(--text-muted);">PDF &nbsp;·&nbsp; TXT &nbsp;·&nbsp; Max 5MB &nbsp;·&nbsp; Chunked 500 tokens &nbsp;·&nbsp; Pinecone + BM25</div>
     </div>
     """, unsafe_allow_html=True)
 
     col1, col2 = st.columns([3, 2])
-
     with col1:
         uploaded_file = st.file_uploader("Drop file", type=["pdf","txt"], label_visibility="collapsed")
         if uploaded_file:
@@ -672,23 +659,21 @@ with tab2:
                             if uploaded_file.name not in st.session_state.uploaded_docs:
                                 st.session_state.uploaded_docs.append(uploaded_file.name)
                         elif resp.status_code == 413:
-                            st.error("File too large. Max 10MB.")
+                            st.error("File too large.")
                         else:
                             st.error(f"Upload failed: {resp.status_code}")
                     except Exception as e:
                         st.error(f"Error: {str(e)}")
-
         st.markdown("""
         <div class="ingest-note">
             Files split via RecursiveCharacterTextSplitter (chunk=500, overlap=100).<br>
             Each chunk indexed in Pinecone (vector) AND BM25 (keyword) simultaneously.<br>
-            Hybrid retrieval merges both using Reciprocal Rank Fusion at query time.
+            Hybrid retrieval merges both via Reciprocal Rank Fusion at query time.
         </div>
         """, unsafe_allow_html=True)
 
     with col2:
-        st.markdown("""
-        <div class="sec-card">
+        st.markdown("""<div class="sec-card">
             <div style="font-family:'Fira Code',monospace;font-size:0.65rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.12em;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--bdr-color);">
                 Indexed This Session
             </div>
@@ -706,8 +691,7 @@ with tab2:
             <div style="font-family:'Fira Code',monospace;font-size:0.65rem;color:var(--text-dim);margin-top:20px;padding-top:16px;border-top:1px dashed var(--bdr-color);line-height:2;">
                 SESSION ID<br><span style="color:var(--text-muted);">{st.session_state.session_id}</span>
             </div>
-        </div>
-        """, unsafe_allow_html=True)
+        </div>""", unsafe_allow_html=True)
 
 
 # ════════════════════════════════════════════════
@@ -715,7 +699,6 @@ with tab2:
 # ════════════════════════════════════════════════
 
 with tab3:
-
     st.markdown("""
     <div class="eval-section-title">RAG Quality Evaluation</div>
     <div class="eval-section-sub">
@@ -731,7 +714,7 @@ with tab3:
     with col_info:
         st.markdown("""
         <div style="font-family:'Fira Code',monospace;font-size:0.7rem;color:var(--text-muted);padding-top:10px;line-height:1.8;">
-            Runs 5 predefined questions through full RAG pipeline.<br>Results cached until next run.
+            5 predefined questions · results cached until next run
         </div>
         """, unsafe_allow_html=True)
 
@@ -828,37 +811,147 @@ with tab4:
     col1, col2 = st.columns(2)
 
     with col1:
+        # ── LLM Stack Panel ──
         st.markdown("""
         <div class="sec-card">
-            <div class="sec-card-title"><span class="accent-rule"></span>LangGraph Multi-Agent Pipeline</div>
-            <div class="sec-card-body">
-                <span style="color:var(--text-main);">USER QUERY</span><br>
-                <span style="color:var(--neon-cyan);">↓</span>&nbsp; <span style="color:var(--neon-cyan);">[PLANNER]</span> intent analysis + sub-queries<br>
-                <span style="color:var(--neon-cyan);">↓</span>&nbsp; <span style="color:var(--neon-green);">[RETRIEVER]</span> hybrid BM25 + vector + RRF<br>
-                <span style="color:var(--neon-cyan);">↓</span>&nbsp; <span style="color:var(--neon-amber);">[VALIDATOR]</span> context sufficiency score<br>
-                <span style="color:var(--neon-cyan);">↓ (score ≥ 0.5)</span><br>
-                <span style="color:var(--neon-cyan);">↓</span>&nbsp; <span style="color:var(--neon-purple);">[ANSWER]</span> grounded generation<br>
-                <span style="color:var(--neon-orange);">↓ (score &lt; 0.5) → [CLARIFIER]</span> human-in-the-loop<br>
-                <span style="color:var(--text-main);">STREAMING ANSWER + CITATIONS + TRACE</span>
+            <div class="sec-card-title">
+                <span class="accent-rule"></span>LLM Stack &amp; Routing
             </div>
+            <div class="llm-status-panel">
+                <div class="llm-status-title">Standard Pipeline · Groq → NVIDIA → Gemini</div>
+                <div class="llm-row primary">
+                    <span class="llm-rank primary">Primary</span>
+                    <span class="llm-name">Groq · llama-3.1-8b-instant</span>
+                    <span class="llm-quota">14,400 req/day free</span>
+                </div>
+                <div class="llm-row fb1">
+                    <span class="llm-rank fb1">Fallback 1</span>
+                    <span class="llm-name">NVIDIA NIM · llama-3.1-8b-instruct</span>
+                    <span class="llm-quota">separate quota</span>
+                </div>
+                <div class="llm-row fb2">
+                    <span class="llm-rank fb2">Fallback 2</span>
+                    <span class="llm-name">Gemini 2.5 Flash</span>
+                    <span class="llm-quota">last resort</span>
+                </div>
+            </div>
+            <div style="font-family:'Fira Code',monospace;font-size:0.65rem;color:var(--text-muted);margin-bottom:12px;text-transform:uppercase;letter-spacing:0.1em;">Agent Pipeline · Per-Agent LLM Routing</div>
+            <table class="routing-table">
+                <thead>
+                    <tr>
+                        <th>Agent</th>
+                        <th>LLM Used</th>
+                        <th>Reason</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td style="color:var(--neon-cyan);">Planner</td>
+                        <td>Groq</td>
+                        <td style="color:var(--text-dim);">Fast query rewriting</td>
+                    </tr>
+                    <tr>
+                        <td style="color:var(--neon-green);">Retriever</td>
+                        <td style="color:var(--neon-green);">No LLM</td>
+                        <td style="color:var(--text-dim);">Pure BM25 + Vector</td>
+                    </tr>
+                    <tr>
+                        <td style="color:var(--neon-amber);">Validator</td>
+                        <td>NVIDIA NIM</td>
+                        <td style="color:var(--text-dim);">Isolated quota</td>
+                    </tr>
+                    <tr>
+                        <td style="color:var(--neon-purple);">Answer</td>
+                        <td>Groq → Gemini</td>
+                        <td style="color:var(--text-dim);">High quota + fallback</td>
+                    </tr>
+                    <tr>
+                        <td style="color:var(--neon-orange);">Clarifier</td>
+                        <td>Groq</td>
+                        <td style="color:var(--text-dim);">Conversational, fast</td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
         """, unsafe_allow_html=True)
+
+        # ── NVIDIA API Test ──
+        st.markdown("""
+        <div style="font-family:'Fira Code',monospace;font-size:0.65rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px;">
+            NVIDIA NIM · API Health Check
+        </div>
+        """, unsafe_allow_html=True)
+
+        col_test, col_status = st.columns([2, 3])
+        with col_test:
+            if st.button("Test NVIDIA API", use_container_width=True):
+                with st.spinner("Testing NVIDIA NIM..."):
+                    try:
+                        res = requests.post(
+                            ASK_URL,
+                            json={"question": "test nvidia api health check", "session_id": "nvidia_test"},
+                            timeout=30
+                        )
+                        if res.status_code == 200:
+                            data    = res.json()
+                            llm     = data.get("llm_used", "unknown")
+                            st.session_state.nvidia_status = {
+                                "ok":  True,
+                                "llm": llm,
+                                "msg": "API reachable · LLM: " + llm
+                            }
+                        else:
+                            st.session_state.nvidia_status = {
+                                "ok":  False,
+                                "llm": "none",
+                                "msg": "Backend error " + str(res.status_code)
+                            }
+                    except Exception as e:
+                        st.session_state.nvidia_status = {
+                            "ok":  False,
+                            "llm": "none",
+                            "msg": str(e)
+                        }
+
+        with col_status:
+            if st.session_state.nvidia_status:
+                ns = st.session_state.nvidia_status
+                col  = "var(--neon-green)" if ns["ok"] else "#FF1744"
+                icon = "✓" if ns["ok"] else "✗"
+                st.markdown(f"""
+                <div style="font-family:'Fira Code',monospace;font-size:0.68rem;color:{col};
+                            background:rgba(0,0,0,0.3);border:1px solid {col}33;
+                            border-radius:6px;padding:8px 12px;margin-top:4px;">
+                    {icon} {ns['msg']}
+                </div>
+                """, unsafe_allow_html=True)
+            else:
+                st.markdown("""
+                <div style="font-family:'Fira Code',monospace;font-size:0.68rem;color:var(--text-dim);
+                            background:rgba(0,0,0,0.2);border:1px solid var(--bdr-color);
+                            border-radius:6px;padding:8px 12px;margin-top:4px;">
+                    Click to test NVIDIA NIM connectivity
+                </div>
+                """, unsafe_allow_html=True)
 
     with col2:
         st.markdown(f"""
         <div class="sec-card">
-            <div class="sec-card-title"><span class="accent-rule" style="background:var(--neon-purple);box-shadow:0 0 8px var(--neon-purple);"></span>Stack</div>
-            <div class="sec-card-body" style="display:grid;grid-template-columns:130px 1fr;gap:4px;">
+            <div class="sec-card-title">
+                <span class="accent-rule" style="background:var(--neon-purple);box-shadow:0 0 8px var(--neon-purple);"></span>Full Stack
+            </div>
+            <div class="sec-card-body" style="display:grid;grid-template-columns:140px 1fr;gap:4px;">
                 <span style="color:var(--text-muted);">BACKEND</span><span style="color:var(--text-main);">FastAPI + Uvicorn · Railway</span>
                 <span style="color:var(--text-muted);">FRONTEND</span><span style="color:var(--text-main);">Streamlit Cloud</span>
+                <span style="color:var(--text-muted);">CONTAINER</span><span style="color:var(--text-main);">Docker · python:3.11-slim</span>
                 <span style="color:var(--text-muted);">VECTOR DB</span><span style="color:var(--text-main);">Pinecone serverless · 3072-dim</span>
-                <span style="color:var(--text-muted);">KEYWORD</span><span style="color:var(--text-main);">rank-bm25 (in-memory)</span>
+                <span style="color:var(--text-muted);">KEYWORD</span><span style="color:var(--text-main);">rank-bm25 · in-memory</span>
                 <span style="color:var(--text-muted);">FUSION</span><span style="color:var(--text-main);">Reciprocal Rank Fusion</span>
                 <span style="color:var(--text-muted);">EMBED</span><span style="color:var(--text-main);">gemini-embedding-001</span>
-                <span style="color:var(--text-muted);">LLM PRIMARY</span><span style="color:var(--text-main);">Gemini 2.5 Flash</span>
-                <span style="color:var(--text-muted);">LLM FALLBACK 1</span><span style="color:var(--text-main);">Groq llama-3.1-8b</span>
-                <span style="color:var(--text-muted);">LLM FALLBACK 2</span><span style="color:var(--text-main);">NVIDIA NIM llama-3.1-8b</span>
-                <span style="color:var(--text-muted);">ORCHESTRATION</span><span style="color:var(--text-main);">LangChain + LangGraph</span>
+                <span style="color:var(--text-muted);">LLM PRIMARY</span><span style="color:var(--neon-green);">Groq llama-3.1-8b</span>
+                <span style="color:var(--text-muted);">LLM FALLBACK 1</span><span style="color:var(--neon-amber);">NVIDIA NIM llama-3.1-8b</span>
+                <span style="color:var(--text-muted);">LLM FALLBACK 2</span><span style="color:var(--neon-purple);">Gemini 2.5 Flash</span>
+                <span style="color:var(--text-muted);">ORCHESTRATION</span><span style="color:var(--text-main);">LangChain LCEL + LangGraph</span>
                 <span style="color:var(--text-muted);">EVALUATION</span><span style="color:var(--text-main);">RAGAS + TruLens · Groq judge</span>
                 <span style="color:var(--text-muted);">SESSION</span><span style="color:var(--text-main);">{st.session_state.session_id}</span>
             </div>
@@ -867,20 +960,22 @@ with tab4:
 
     st.markdown("""
     <div class="sec-card">
-        <div class="sec-card-title"><span class="accent-rule" style="background:var(--neon-green);box-shadow:0 0 8px var(--neon-green);"></span>Roadmap</div>
+        <div class="sec-card-title">
+            <span class="accent-rule" style="background:var(--neon-green);box-shadow:0 0 8px var(--neon-green);"></span>Roadmap
+        </div>
         <div class="feat-grid">
             <div class="feat-item done"><span class="feat-dot"></span>Streaming Responses (SSE)</div>
             <div class="feat-item done"><span class="feat-dot"></span>Hybrid BM25 + Vector + RRF</div>
             <div class="feat-item done"><span class="feat-dot"></span>RAGAS Evaluation Pipeline</div>
             <div class="feat-item done"><span class="feat-dot"></span>TruLens Quality Tracing</div>
             <div class="feat-item done"><span class="feat-dot"></span>LangGraph 4-Agent Pipeline</div>
-            <div class="feat-item done"><span class="feat-dot"></span>LangChain RetrievalQA Chain</div>
+            <div class="feat-item done"><span class="feat-dot"></span>LangChain LCEL RetrievalQA</div>
             <div class="feat-item done"><span class="feat-dot"></span>NVIDIA NIM 3rd LLM Fallback</div>
             <div class="feat-item done"><span class="feat-dot"></span>Dockerfile + Containerization</div>
+            <div class="feat-item done"><span class="feat-dot"></span>Smart Per-Agent LLM Routing</div>
+            <div class="feat-item done"><span class="feat-dot"></span>Human-in-the-Loop Clarifier</div>
             <div class="feat-item"><span class="feat-dot"></span>CI/CD GitHub Actions</div>
             <div class="feat-item"><span class="feat-dot"></span>Redis Conversation Memory</div>
-            <div class="feat-item"><span class="feat-dot"></span>Cross-encoder Re-ranking</div>
-            <div class="feat-item"><span class="feat-dot"></span>Multi-document Source Filter</div>
         </div>
     </div>
     """, unsafe_allow_html=True)
