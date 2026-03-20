@@ -2,31 +2,16 @@
 LangGraph Multi-Agent RAG System
 NEXUS Enterprise Knowledge Assistant
 
+Smart LLM routing — each agent uses the best LLM for its task:
+- Planner   → Groq      (fast query rewriting, cheap)
+- Retriever → No LLM    (pure vector + BM25 search)
+- Validator → NVIDIA    (separate quota for scoring)
+- Answer    → Groq      (fast generation, high quota)
+- Clarifier → Groq      (conversational, fast)
+- Fallback  → Gemini    (last resort only)
+
 Agent Graph:
-─────────────────────────────────────────
- User Query
-     ↓
- [PLANNER AGENT]
-     → Understands intent
-     → Decides search strategy
-     → Generates targeted sub-queries
-     ↓
- [RETRIEVER AGENT]
-     → Runs hybrid search (BM25 + Vector)
-     → Deduplicates and ranks chunks
-     → Returns top context
-     ↓
- [VALIDATOR AGENT]
-     → Checks if context is sufficient
-     → Scores relevance 0-1
-     → Routes: sufficient → Answer
-               insufficient → Clarify
-     ↓
- [ANSWER AGENT]          [CLARIFIER AGENT]
-     → Generates grounded   → Asks user for
-       final answer           more context
-     → Cites sources        → Human-in-the-loop
-─────────────────────────────────────────
+START → planner → retriever → validator → answer|clarifier → END
 """
 
 import os
@@ -42,7 +27,7 @@ NVIDIA_API_KEY = os.getenv("NVIDIA_API_KEY")
 
 
 # ─────────────────────────────────────────────
-# Agent State Schema
+# Agent State
 # ─────────────────────────────────────────────
 
 class AgentState(TypedDict):
@@ -66,25 +51,11 @@ class AgentState(TypedDict):
 
 
 # ─────────────────────────────────────────────
-# LLM Helper — 3-way fallback
+# Per-agent LLM callers
 # ─────────────────────────────────────────────
 
-def call_llm(prompt: str, max_tokens: int = 512) -> tuple:
-    """Call LLMs in order: Gemini → Groq → NVIDIA. Returns (text, llm_name)."""
-
-    # 1. Gemini
-    try:
-        from google import genai
-        client   = genai.Client(api_key=GEMINI_API_KEY)
-        response = client.models.generate_content(
-            model="gemini-2.5-flash",
-            contents=prompt
-        )
-        return response.text.strip(), "gemini-2.5-flash"
-    except Exception as e:
-        print(f"Gemini error in agent: {e}")
-
-    # 2. Groq
+def call_groq(prompt: str, max_tokens: int = 512) -> tuple:
+    """Groq — primary for Planner, Answer, Clarifier."""
     try:
         from groq import Groq
         client   = Groq(api_key=GROQ_API_KEY)
@@ -96,9 +67,12 @@ def call_llm(prompt: str, max_tokens: int = 512) -> tuple:
         )
         return response.choices[0].message.content.strip(), "groq/llama-3.1-8b"
     except Exception as e:
-        print(f"Groq error in agent: {e}")
+        print(f"Groq error: {e}")
+        return None, None
 
-    # 3. NVIDIA NIM
+
+def call_nvidia(prompt: str, max_tokens: int = 256) -> tuple:
+    """NVIDIA NIM — primary for Validator."""
     try:
         from openai import OpenAI
         client   = OpenAI(
@@ -109,29 +83,64 @@ def call_llm(prompt: str, max_tokens: int = 512) -> tuple:
             model="meta/llama-3.1-8b-instruct",
             messages=[{"role": "user", "content": prompt}],
             max_tokens=max_tokens,
-            temperature=0.2
+            temperature=0.0
         )
         return response.choices[0].message.content.strip(), "nvidia/llama-3.1-8b"
     except Exception as e:
-        print(f"NVIDIA error in agent: {e}")
+        print(f"NVIDIA error: {e}")
+        return None, None
+
+
+def call_gemini(prompt: str, max_tokens: int = 1024) -> tuple:
+    """Gemini — fallback of last resort."""
+    try:
+        from google import genai
+        client   = genai.Client(api_key=GEMINI_API_KEY)
+        response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=prompt
+        )
+        return response.text.strip(), "gemini-2.5-flash"
+    except Exception as e:
+        print(f"Gemini error: {e}")
+        return None, None
+
+
+def call_with_fallback(prompt: str, primary: str = "groq", max_tokens: int = 512) -> tuple:
+    """
+    Call LLM with smart fallback.
+    primary = "groq"   → Groq → NVIDIA → Gemini
+    primary = "nvidia" → NVIDIA → Groq → Gemini
+    """
+    if primary == "groq":
+        order = [call_groq, call_nvidia, call_gemini]
+    elif primary == "nvidia":
+        order = [call_nvidia, call_groq, call_gemini]
+    else:
+        order = [call_gemini, call_groq, call_nvidia]
+
+    for caller in order:
+        text, llm = caller(prompt, max_tokens)
+        if text:
+            return text, llm
 
     return "All LLMs failed. Please try again.", "none"
 
 
 # ─────────────────────────────────────────────
-# AGENT 1 — Planner
+# AGENT 1 — Planner (Groq)
 # ─────────────────────────────────────────────
 
 def planner_agent(state: AgentState) -> AgentState:
     """
-    Understands user intent and creates a search strategy.
-    Generates 3-4 targeted sub-queries from the original question.
+    Analyzes user intent and generates targeted search queries.
+    Uses Groq — fast and high quota for query rewriting.
     """
     question     = state["question"]
     chat_history = state.get("chat_history", "")
     agents_used  = state.get("agents_used", [])
 
-    print(f"[PLANNER] Processing: {question[:60]}...")
+    print(f"[PLANNER/Groq] {question[:60]}...")
 
     history_section = ""
     if chat_history:
@@ -142,16 +151,16 @@ def planner_agent(state: AgentState) -> AgentState:
         "Analyze the user question and create an optimal search strategy.\n\n"
         + history_section
         + "User Question: " + question + "\n\n"
-        "Respond in this EXACT format (no extra text):\n"
-        "INTENT: <one sentence describing what the user wants>\n"
-        "TYPE: <one of: factual / procedural / policy / comparison / general>\n"
-        "STRATEGY: <one of: specific / broad / multi-aspect>\n"
+        "Respond in this EXACT format:\n"
+        "INTENT: <what the user wants>\n"
+        "TYPE: <factual / procedural / policy / comparison / general>\n"
+        "STRATEGY: <specific / broad / multi-aspect>\n"
         "QUERY_1: <first search query>\n"
         "QUERY_2: <second search query>\n"
         "QUERY_3: <third search query>"
     )
 
-    response, llm = call_llm(prompt, max_tokens=300)
+    response, llm = call_with_fallback(prompt, primary="groq", max_tokens=300)
 
     queries  = []
     strategy = "broad"
@@ -168,7 +177,7 @@ def planner_agent(state: AgentState) -> AgentState:
     queries.append(question)
     queries = list(dict.fromkeys(queries))[:4]
 
-    print(f"[PLANNER] Strategy: {strategy}, Queries: {len(queries)}")
+    print(f"[PLANNER] {len(queries)} queries via {llm}")
 
     return {
         **state,
@@ -180,18 +189,19 @@ def planner_agent(state: AgentState) -> AgentState:
 
 
 # ─────────────────────────────────────────────
-# AGENT 2 — Retriever
+# AGENT 2 — Retriever (No LLM)
 # ─────────────────────────────────────────────
 
 def retriever_agent(state: AgentState) -> AgentState:
     """
-    Executes hybrid BM25 + Vector search using planned queries.
-    Applies RRF fusion and returns top ranked chunks.
+    Pure hybrid search — no LLM involved.
+    BM25 + Vector search + RRF fusion.
+    Zero API quota consumed.
     """
     queries     = state.get("search_queries", [state["question"]])
     agents_used = state.get("agents_used", [])
 
-    print(f"[RETRIEVER] Running {len(queries)} queries...")
+    print(f"[RETRIEVER/NoLLM] {len(queries)} queries...")
 
     try:
         from app.api.rag_api import (
@@ -243,7 +253,7 @@ def retriever_agent(state: AgentState) -> AgentState:
             for r in top
         ]
 
-        print(f"[RETRIEVER] Retrieved {len(top)} chunks")
+        print(f"[RETRIEVER] {len(top)} chunks (no LLM used)")
 
         return {
             **state,
@@ -266,48 +276,45 @@ def retriever_agent(state: AgentState) -> AgentState:
 
 
 # ─────────────────────────────────────────────
-# AGENT 3 — Validator
+# AGENT 3 — Validator (NVIDIA)
 # ─────────────────────────────────────────────
 
 def validator_agent(state: AgentState) -> AgentState:
     """
-    Validates whether retrieved context is sufficient to answer.
+    Scores context sufficiency for answering the question.
+    Uses NVIDIA — keeps NVIDIA quota separate from answer generation.
     Score >= 0.5 → Answer Agent
-    Score < 0.5  → Clarifier Agent (human-in-the-loop)
+    Score < 0.5  → Clarifier Agent
     """
     question    = state["question"]
     context     = state.get("context", "")
     agents_used = state.get("agents_used", [])
 
-    print("[VALIDATOR] Checking context sufficiency...")
+    print("[VALIDATOR/NVIDIA] Checking sufficiency...")
 
     if not context:
-        print("[VALIDATOR] No context — routing to clarifier")
         return {
             **state,
             "validation_score":  0.0,
-            "validation_reason": "No relevant documents found in knowledge base.",
+            "validation_reason": "No relevant documents found.",
             "is_sufficient":     False,
             "agents_used":       agents_used + ["validator"]
         }
 
     prompt = (
-        "You are a quality validation agent for a RAG system.\n\n"
-        "Evaluate whether the retrieved context contains sufficient information "
-        "to answer the question.\n\n"
+        "You are a quality validation agent. Evaluate context sufficiency.\n\n"
         "Question: " + question + "\n\n"
-        "Retrieved Context:\n" + context[:800] + "\n\n"
-        "Reply in this EXACT format (no extra text):\n"
-        "SCORE: <decimal 0.0-1.0>\n"
-        "REASON: <one sentence explaining the score>\n"
+        "Context:\n" + context[:800] + "\n\n"
+        "Reply EXACTLY in this format:\n"
+        "SCORE: <0.0-1.0>\n"
+        "REASON: <one sentence>\n"
         "SUFFICIENT: <YES or NO>\n\n"
-        "Scoring guide:\n"
-        "0.8-1.0 = context directly and completely answers the question\n"
-        "0.5-0.7 = context partially answers the question\n"
-        "0.0-0.4 = context does not contain relevant information"
+        "0.8-1.0 = fully answers the question\n"
+        "0.5-0.7 = partially answers\n"
+        "0.0-0.4 = insufficient information"
     )
 
-    response, _ = call_llm(prompt, max_tokens=150)
+    response, llm = call_with_fallback(prompt, primary="nvidia", max_tokens=150)
 
     score         = 0.5
     reason        = "Context partially relevant."
@@ -332,7 +339,7 @@ def validator_agent(state: AgentState) -> AgentState:
     if score < 0.5:
         is_sufficient = False
 
-    print(f"[VALIDATOR] Score: {score:.2f} | Sufficient: {is_sufficient}")
+    print(f"[VALIDATOR] Score: {score:.2f} via {llm}")
 
     return {
         **state,
@@ -344,20 +351,20 @@ def validator_agent(state: AgentState) -> AgentState:
 
 
 # ─────────────────────────────────────────────
-# AGENT 4A — Answer Agent
+# AGENT 4A — Answer Agent (Groq → Gemini fallback)
 # ─────────────────────────────────────────────
 
 def answer_agent(state: AgentState) -> AgentState:
     """
-    Generates final grounded answer using ONLY retrieved context.
-    Never hallucinates — strictly context-bound.
+    Generates final grounded answer.
+    Uses Groq (fast, high quota) → Gemini fallback.
     """
     question     = state["question"]
     context      = state["context"]
     chat_history = state.get("chat_history", "")
     agents_used  = state.get("agents_used", [])
 
-    print("[ANSWER] Generating response...")
+    print("[ANSWER/Groq] Generating...")
 
     history_section = ""
     if chat_history:
@@ -367,8 +374,8 @@ def answer_agent(state: AgentState) -> AgentState:
         "You are an enterprise AI assistant. Answer using ONLY the provided context.\n\n"
         "Rules:\n"
         "- Use ONLY information from the context\n"
-        "- Never invent or assume information\n"
-        "- Give complete, well-structured answers with full sentences\n"
+        "- Never invent information\n"
+        "- Give complete answers with full sentences\n"
         "- Include relevant details, not just numbers\n"
         "- If context is insufficient say: "
         "'The information is not fully available in the provided documents'\n\n"
@@ -378,7 +385,14 @@ def answer_agent(state: AgentState) -> AgentState:
         + "Answer:"
     )
 
-    answer, llm = call_llm(prompt, max_tokens=1024)
+    answer, llm = call_with_fallback(prompt, primary="groq", max_tokens=1024)
+
+    # If Groq and NVIDIA both failed, try Gemini directly
+    if not answer or llm == "none":
+        answer, llm = call_gemini(prompt, max_tokens=1024)
+        if not answer:
+            answer = "Unable to generate answer. Please try again."
+            llm    = "none"
 
     print(f"[ANSWER] Generated via {llm}")
 
@@ -393,34 +407,32 @@ def answer_agent(state: AgentState) -> AgentState:
 
 
 # ─────────────────────────────────────────────
-# AGENT 4B — Clarifier Agent (Human-in-the-loop)
+# AGENT 4B — Clarifier Agent (Groq)
 # ─────────────────────────────────────────────
 
 def clarifier_agent(state: AgentState) -> AgentState:
     """
-    Human-in-the-loop agent.
-    When context is insufficient, asks user to clarify
-    instead of hallucinating. Guides user to rephrase.
+    Human-in-the-loop. Asks user to clarify when context insufficient.
+    Uses Groq — conversational, fast.
     """
     question    = state["question"]
     reason      = state.get("validation_reason", "")
     agents_used = state.get("agents_used", [])
 
-    print("[CLARIFIER] Insufficient context — asking for clarification")
+    print("[CLARIFIER/Groq] Asking for clarification...")
 
     prompt = (
-        "You are a helpful assistant. The knowledge base does not have enough "
-        "information to fully answer the user's question.\n\n"
+        "You are a helpful assistant. The knowledge base lacks sufficient info.\n\n"
         "User Question: " + question + "\n"
-        "Reason context was insufficient: " + reason + "\n\n"
-        "Generate a helpful response that:\n"
-        "1. Acknowledges you could not find complete information\n"
-        "2. Asks ONE specific clarifying question to help find better results\n"
-        "3. Suggests how to rephrase the question\n\n"
+        "Why insufficient: " + reason + "\n\n"
+        "Write a response that:\n"
+        "1. Acknowledges the limitation politely\n"
+        "2. Asks ONE specific clarifying question\n"
+        "3. Suggests how to rephrase\n\n"
         "Keep it concise and friendly."
     )
 
-    clarification, llm = call_llm(prompt, max_tokens=200)
+    clarification, llm = call_with_fallback(prompt, primary="groq", max_tokens=200)
 
     return {
         **state,
@@ -447,10 +459,6 @@ def route_after_validation(state: AgentState) -> Literal["answer", "clarify"]:
 # ─────────────────────────────────────────────
 
 def build_agent_graph():
-    """
-    Builds and compiles the LangGraph StateGraph.
-    START → planner → retriever → validator → answer|clarifier → END
-    """
     from langgraph.graph import StateGraph, END
 
     graph = StateGraph(AgentState)
@@ -468,10 +476,7 @@ def build_agent_graph():
     graph.add_conditional_edges(
         "validator",
         route_after_validation,
-        {
-            "answer":  "answer",
-            "clarify": "clarifier"
-        }
+        {"answer": "answer", "clarify": "clarifier"}
     )
 
     graph.add_edge("answer",    END)
@@ -485,10 +490,7 @@ def build_agent_graph():
 # ─────────────────────────────────────────────
 
 def run_agent(question: str, session_id: str, chat_history: str = "") -> dict:
-    """
-    Run the full 4-agent LangGraph pipeline.
-    Returns answer, sources, agent trace, and metadata.
-    """
+    """Run the full 4-agent LangGraph pipeline."""
     try:
         agent_graph = build_agent_graph()
 
@@ -531,7 +533,7 @@ def run_agent(question: str, session_id: str, chat_history: str = "") -> dict:
     except Exception as e:
         print(f"Agent graph error: {e}")
         return {
-            "answer":              f"Agent pipeline error: {str(e)}",
+            "answer":              "Agent pipeline error: " + str(e),
             "sources":             [],
             "session_id":          session_id,
             "agents_used":         [],
