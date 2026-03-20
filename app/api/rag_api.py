@@ -619,15 +619,15 @@ EVAL_DATASET = [
 
 
 # ─────────────────────────────────────────────
-# RAGAS Judge — Groq
+# Unified Judge Function
 # ─────────────────────────────────────────────
 
-def _ragas_judge(prompt: str) -> float:
+def _judge(prompt: str) -> float:
     try:
-        res  = groq_client.chat.completions.create(
+        res = groq_client.chat.completions.create(
             model="llama-3.1-8b-instant",
             messages=[{"role": "user", "content": prompt}],
-            max_tokens=10,
+            max_tokens=5,
             temperature=0
         )
         text = res.choices[0].message.content.strip()
@@ -637,116 +637,152 @@ def _ragas_judge(prompt: str) -> float:
         score = float(nums[0])
         if score > 1:
             score = score / 10
-        if score == 0.0 and len(text) > 3:
-            return 0.6
         return round(min(max(score, 0.0), 1.0), 3)
     except Exception:
         return 0.75
 
+
+# ─────────────────────────────────────────────
+# RAGAS Scoring
+# ─────────────────────────────────────────────
 
 def _ragas_score(question: str, answer: str, context: str, ground_truth: str) -> dict:
     return {
-        "faithfulness": _ragas_judge(
-            "Judge: single decimal 0.0-1.0 only. No words.\n"
-            "Does answer use ONLY context? 1.0=fully grounded 0.5=partial 0.0=not grounded\n"
-            "Context: " + context[:400] + "\nAnswer: " + answer[:250] + "\nScore:"
+
+        "faithfulness": _judge(
+            "You are evaluating grounding quality.\n\n"
+            "Does the answer strictly rely ONLY on the given context?\n"
+            "Do NOT allow external knowledge.\n\n"
+            "Scoring:\n"
+            "1.0 = fully grounded\n"
+            "0.5 = partially grounded\n"
+            "0.0 = not grounded\n\n"
+            "Context:\n" + context[:400] + "\n\n"
+            "Answer:\n" + answer[:250] + "\n\n"
+            "Score:"
         ),
-        "answer_relevancy": _ragas_judge(
-            "Judge: single decimal 0.0-1.0 only. No words.\n"
-            "Does answer address the question? 1.0=fully 0.5=partial 0.0=no\n"
-            "Question: " + question + "\nAnswer: " + answer[:250] + "\nScore:"
+
+        "answer_relevancy": _judge(
+            "You are evaluating answer relevance.\n\n"
+            "Does the answer clearly address the question?\n\n"
+            "Scoring:\n"
+            "1.0 = fully answers the question\n"
+            "0.5 = partially answers\n"
+            "0.0 = does not answer\n\n"
+            "Question:\n" + question + "\n\n"
+            "Answer:\n" + answer[:250] + "\n\n"
+            "Score:"
         ),
-        "context_precision": _ragas_judge(
-            "Judge: single decimal 0.0-1.0 only. No words.\n"
-            "Is context precise for the question? 1.0=highly precise 0.5=partial 0.0=not relevant\n"
-            "Question: " + question + "\nContext: " + context[:400] + "\nScore:"
+
+        "context_precision": _judge(
+            "You are evaluating context precision.\n\n"
+            "Is the retrieved context clean and focused on the question?\n\n"
+            "Scoring:\n"
+            "1.0 = only relevant information\n"
+            "0.5 = mix of relevant and irrelevant\n"
+            "0.0 = mostly irrelevant\n\n"
+            "Question:\n" + question + "\n\n"
+            "Context:\n" + context[:400] + "\n\n"
+            "Score:"
         ),
-        "context_recall": _ragas_judge(
-            "Judge: single decimal 0.0-1.0 only. No words.\n"
-            "Does context contain all info to match ground truth? 1.0=all 0.5=some 0.0=missing\n"
-            "Ground Truth: " + ground_truth + "\nContext: " + context[:400] + "\nScore:"
+
+        "context_recall": _judge(
+            "You are evaluating context completeness.\n\n"
+            "Does the context contain ALL information needed to match the ground truth?\n\n"
+            "Scoring:\n"
+            "1.0 = complete information\n"
+            "0.5 = partial information\n"
+            "0.0 = missing key information\n\n"
+            "Ground Truth:\n" + ground_truth + "\n\n"
+            "Context:\n" + context[:400] + "\n\n"
+            "Score:"
         )
     }
 
 
 # ─────────────────────────────────────────────
-# TruLens Judge — Groq
+# TruLens Scoring
 # ─────────────────────────────────────────────
-
-def _trulens_judge(prompt: str) -> float:
-    try:
-        res  = groq_client.chat.completions.create(
-            model="llama-3.1-8b-instant",
-            messages=[{"role": "user", "content": prompt}],
-            max_tokens=10,
-            temperature=0
-        )
-        text = res.choices[0].message.content.strip()
-        nums = re.findall(r"\d+\.?\d*", text)
-        if not nums:
-            return 0.75
-        score = float(nums[0])
-        if score > 1:
-            score = score / 10
-        if score == 0.0 and len(text) > 3:
-            return 0.6
-        return round(min(max(score, 0.0), 1.0), 3)
-    except Exception:
-        return 0.75
-
 
 def _trulens_score(question: str, answer: str, context: str) -> dict:
     return {
-        "groundedness": _trulens_judge(
-            "Judge: single decimal 0.0-1.0 only. No words.\n"
-            "Are all answer claims supported by context? 1.0=all 0.5=some 0.0=no\n"
-            "Context: " + context[:400] + "\nAnswer: " + answer[:250] + "\nScore:"
+
+        "groundedness": _judge(
+            "You are evaluating factual grounding.\n\n"
+            "Are all claims in the answer supported by the context?\n\n"
+            "Scoring:\n"
+            "1.0 = fully supported\n"
+            "0.5 = partially supported\n"
+            "0.0 = unsupported\n\n"
+            "Context:\n" + context[:400] + "\n\n"
+            "Answer:\n" + answer[:250] + "\n\n"
+            "Score:"
         ),
-        "answer_relevance": _trulens_judge(
-            "Judge: single decimal 0.0-1.0 only. No words.\n"
-            "Does answer address question? 1.0=fully 0.5=partial 0.0=no\n"
-            "Question: " + question + "\nAnswer: " + answer[:250] + "\nScore:"
+
+        "answer_relevance": _judge(
+            "You are evaluating answer relevance.\n\n"
+            "Does the answer directly address the question?\n\n"
+            "Scoring:\n"
+            "1.0 = fully relevant\n"
+            "0.5 = partially relevant\n"
+            "0.0 = not relevant\n\n"
+            "Question:\n" + question + "\n\n"
+            "Answer:\n" + answer[:250] + "\n\n"
+            "Score:"
         ),
-        "context_relevance": _trulens_judge(
-            "You are a relevance judge. Reply with single decimal 0.0-1.0 only. No words.\n\n"
-            "Task: Is the context TOPICALLY RELATED to the question?\n"
-            "Not whether it fully answers it. Just: is it about the same subject?\n\n"
-            "1.0 = context is about the same topic as the question\n"
-            "0.7 = context mostly covers the same topic\n"
-            "0.4 = context partially related\n"
-            "0.0 = context is about a completely different topic\n\n"
-            "If question asks about sick leave and context mentions sick leave = 1.0\n"
-            "If question asks about passwords and context mentions password policy = 1.0\n\n"
-            "Question: " + question + "\n"
-            "Context: " + context[:500] + "\n\n"
-            "Score (e.g. 0.8):"
+
+        "context_relevance": _judge(
+            "You are evaluating retrieval quality.\n\n"
+            "Task: Check whether the context is TOPICALLY related to the question.\n\n"
+            "IMPORTANT:\n"
+            "- Do NOT check completeness\n"
+            "- Do NOT penalize missing details\n"
+            "- Only check topic match\n\n"
+            "Scoring:\n"
+            "1.0 = clearly same topic\n"
+            "0.7 = mostly same topic\n"
+            "0.4 = partially related\n"
+            "0.1 = weak relation\n"
+            "0.0 = unrelated\n\n"
+            "Example:\n"
+            "Question: How many sick leave days per year?\n"
+            "Context: Employees are entitled to 10 days of paid sick leave per year.\n"
+            "Score: 0.95\n\n"
+            "If topic matches, score MUST be >= 0.8\n\n"
+            "Question:\n" + question + "\n\n"
+            "Context:\n" + context[:500] + "\n\n"
+            "Score:"
         )
     }
 
 
 # ─────────────────────────────────────────────
-# /evaluate
+# /evaluate Endpoint
 # ─────────────────────────────────────────────
 
 @app.post("/evaluate")
 async def run_evaluation():
     ragas_per_q    = []
     trulens_per_q  = []
+
     ragas_scores   = {k: [] for k in ["faithfulness","answer_relevancy","context_precision","context_recall"]}
     trulens_scores = {k: [] for k in ["groundedness","answer_relevance","context_relevance"]}
 
     for item in EVAL_DATASET:
         q  = item["question"]
         gt = item["ground_truth"]
+
         context, _ = retrieve_context(q)
 
-        if context is None:
+        if not context:
             context = ""
             answer  = "No relevant information found."
         else:
             eval_prompt = (
-                "Answer using only the context. Complete sentences.\n\n"
-                "Context:\n" + context + "\n\nQuestion: " + q + "\n\nAnswer:"
+                "Answer using ONLY the context. Do not add external information.\n\n"
+                "Context:\n" + context + "\n\n"
+                "Question: " + q + "\n\n"
+                "Answer:"
             )
             answer, _ = generate_answer(eval_prompt)
 
@@ -760,9 +796,10 @@ async def run_evaluation():
         for k in trulens_scores:
             trulens_scores[k].append(tq.get(k, 0.0))
 
-    ragas_agg          = {k: round(float(np.mean(v)), 4) for k, v in ragas_scores.items()}
+    ragas_agg = {k: round(float(np.mean(v)), 4) for k, v in ragas_scores.items()}
     ragas_agg["overall"] = round(float(np.mean(list(ragas_agg.values()))), 4)
-    trulens_agg          = {k: round(float(np.mean(v)), 4) for k, v in trulens_scores.items()}
+
+    trulens_agg = {k: round(float(np.mean(v)), 4) for k, v in trulens_scores.items()}
     trulens_agg["overall"] = round(float(np.mean(list(trulens_agg.values()))), 4)
 
     return {

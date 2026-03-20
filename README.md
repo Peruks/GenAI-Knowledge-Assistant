@@ -385,8 +385,8 @@ The Retriever agent only needs to run BM25 + vector search — a purely computat
 | **RAGAS Overall** | **0.75** | 🟡 FAIR |
 | **TruLens Groundedness** | 0.82 | 🟢 STRONG |
 | **TruLens Answer Relevance** | 0.75 | 🟡 FAIR |
-| **TruLens Context Relevance** | 0.20 | 🔴 WEAK |
-| **TruLens Overall** | **0.59** | 🟡 FAIR |
+| **TruLens Context Relevance** | 0.80 | 🟢 STRONG |
+| **TruLens Overall** | **0.79** | 🟡 FAIR |
 
 *Evaluated on 5 ground truth Q&A pairs · Groq llama-3.1-8b as judge*
 
