@@ -19,10 +19,11 @@ langchain-text-splitters
 
 rank-bm25
 
-# LangChain
+# LangChain + LangGraph
 langchain
 langchain-core
 langchain-google-genai
 langchain-groq
 langchain-openai
 langchain-pinecone
+langgraph

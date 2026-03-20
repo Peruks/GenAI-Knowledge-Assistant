@@ -1,6 +1,6 @@
 """
 Enterprise GenAI Knowledge Assistant
-RAG System v4.2 with:
+RAG System v4.3 with:
 - Gemini embeddings
 - Pinecone vector DB
 - BM25 keyword search (Hybrid Retrieval)
@@ -9,10 +9,11 @@ RAG System v4.2 with:
 - Streaming responses
 - Gemini LLM (primary)
 - Groq fallback
-- NVIDIA NIM fallback (via LangChain)
-- LangChain RetrievalQA chain (/ask-lc endpoint)
+- NVIDIA NIM fallback
+- LangChain RetrievalQA chain (/ask-lc)
+- LangGraph Multi-Agent (/ask-agent)
 - Document upload
-- RAGAS + TruLens evaluation endpoint
+- RAGAS + TruLens evaluation
 """
 
 import os
@@ -84,7 +85,7 @@ def clean_text(text: str) -> str:
 # FastAPI App
 # ─────────────────────────────────────────────
 
-app = FastAPI(title="Enterprise GenAI Assistant", version="4.2")
+app = FastAPI(title="Enterprise GenAI Assistant", version="4.3")
 
 app.add_middleware(
     CORSMiddleware,
@@ -95,7 +96,7 @@ app.add_middleware(
 
 
 # ─────────────────────────────────────────────
-# Request Models
+# Request Model
 # ─────────────────────────────────────────────
 
 class QuestionRequest(BaseModel):
@@ -338,7 +339,7 @@ def build_prompt(question: str, context: str, history_text: str) -> str:
     )
 
 
-def generate_with_groq(prompt: str) -> str:
+def generate_with_groq(prompt: str) -> str | None:
     try:
         response = groq_client.chat.completions.create(
             model="llama-3.1-8b-instant",
@@ -361,11 +362,7 @@ def generate_with_groq(prompt: str) -> str:
         return None
 
 
-def generate_with_nvidia(prompt: str) -> str:
-    """
-    NVIDIA NIM fallback via OpenAI-compatible API.
-    Uses meta/llama-3.1-8b-instruct on NVIDIA's inference infrastructure.
-    """
+def generate_with_nvidia(prompt: str) -> str | None:
     try:
         from openai import OpenAI as OpenAIClient
         nvidia_client = OpenAIClient(
@@ -394,11 +391,7 @@ def generate_with_nvidia(prompt: str) -> str:
 
 
 def generate_answer(prompt: str) -> tuple[str, str]:
-    """
-    Try LLMs in order: Gemini → Groq → NVIDIA NIM
-    Returns (answer, llm_used)
-    """
-    # 1. Gemini
+    """Try Gemini → Groq → NVIDIA. Returns (answer, llm_used)."""
     try:
         response = gemini_client.models.generate_content(
             model="gemini-2.5-flash",
@@ -406,20 +399,17 @@ def generate_answer(prompt: str) -> tuple[str, str]:
         )
         return response.text, "gemini-2.5-flash"
     except Exception as e:
-        err = str(e)
-        print("Gemini error:", err)
+        print("Gemini error:", e)
 
-    # 2. Groq
     answer = generate_with_groq(prompt)
     if answer:
         return answer, "groq/llama-3.1-8b"
 
-    # 3. NVIDIA NIM
     answer = generate_with_nvidia(prompt)
     if answer:
         return answer, "nvidia/llama-3.1-8b"
 
-    return "All AI models are currently unavailable. Please try again.", "none"
+    return "All AI models are currently unavailable.", "none"
 
 
 # ─────────────────────────────────────────────
@@ -429,19 +419,26 @@ def generate_answer(prompt: str) -> tuple[str, str]:
 @app.get("/")
 def root():
     return {
-        "message":      "Enterprise GenAI Assistant API",
-        "version":      "4.2",
-        "retrieval":    "hybrid (vector + BM25 + RRF)",
-        "llm_primary":  "gemini-2.5-flash",
+        "message":       "Enterprise GenAI Assistant API",
+        "version":       "4.3",
+        "retrieval":     "hybrid (vector + BM25 + RRF)",
+        "llm_primary":   "gemini-2.5-flash",
         "llm_fallback1": "groq/llama-3.1-8b",
         "llm_fallback2": "nvidia/llama-3.1-8b",
-        "langchain":    "/ask-lc endpoint available",
-        "bm25_corpus":  len(bm25_corpus)
+        "endpoints": {
+            "/ask":        "Custom hybrid RAG pipeline",
+            "/ask-stream": "Streaming responses",
+            "/ask-lc":     "LangChain RetrievalQA chain",
+            "/ask-agent":  "LangGraph 4-agent pipeline",
+            "/upload":     "Document ingestion",
+            "/evaluate":   "RAGAS + TruLens evaluation"
+        },
+        "bm25_corpus": len(bm25_corpus)
     }
 
 
 # ─────────────────────────────────────────────
-# /ask — Standard Endpoint (custom pipeline)
+# /ask — Standard Endpoint
 # ─────────────────────────────────────────────
 
 @app.post("/ask")
@@ -461,8 +458,8 @@ def ask_question(request: QuestionRequest):
                 "llm_used":   "none"
             }
 
-        prompt         = build_prompt(question, context, history_text)
-        answer, llm    = generate_answer(prompt)
+        prompt      = build_prompt(question, context, history_text)
+        answer, llm = generate_answer(prompt)
 
         history.append(f"User: {question}")
         history.append(f"Assistant: {answer}")
@@ -486,20 +483,60 @@ def ask_question(request: QuestionRequest):
 
 @app.post("/ask-lc")
 def ask_langchain_endpoint(request: QuestionRequest):
-    """
-    LangChain RetrievalQA pipeline.
-    LLM fallback: Gemini → Groq → NVIDIA NIM
-    Uses ConversationBufferWindowMemory (last 5 exchanges)
-    """
+    """LangChain RetrievalQA with Gemini → Groq → NVIDIA fallback."""
     try:
         from app.rag.langchain_rag import ask_langchain
-        result = ask_langchain(request.question, request.session_id)
-        return result
+        return ask_langchain(request.question, request.session_id)
     except Exception as e:
         print("LangChain endpoint error:", e)
         raise HTTPException(
             status_code=500,
             detail=f"LangChain pipeline error: {str(e)}"
+        )
+
+
+# ─────────────────────────────────────────────
+# /ask-agent — LangGraph Multi-Agent Endpoint
+# ─────────────────────────────────────────────
+
+@app.post("/ask-agent")
+def ask_agent_endpoint(request: QuestionRequest):
+    """
+    LangGraph 4-agent pipeline:
+    Planner → Retriever → Validator → Answer/Clarifier
+
+    Returns full agent trace including:
+    - answer
+    - agents_used (list of agent names)
+    - validation_score
+    - search_queries generated
+    - needs_clarification flag
+    """
+    try:
+        from app.rag.langgraph_agent import run_agent
+
+        question   = request.question
+        session_id = request.session_id
+
+        # Get chat history for context
+        history      = chat_memory.get(session_id, [])
+        history_text = "\n".join(history[-6:])  # last 3 exchanges
+
+        result = run_agent(question, session_id, history_text)
+
+        # Update session memory
+        if result.get("answer") and not result.get("error"):
+            history.append(f"User: {question}")
+            history.append(f"Assistant: {result['answer']}")
+            chat_memory[session_id] = history
+
+        return result
+
+    except Exception as e:
+        print("Agent endpoint error:", e)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Agent pipeline error: {str(e)}"
         )
 
 
@@ -531,7 +568,6 @@ async def ask_question_stream(request: QuestionRequest):
         full_answer = ""
         llm_used    = "gemini-2.5-flash"
 
-        # Gemini streaming
         try:
             response = gemini_client.models.generate_content_stream(
                 model="gemini-2.5-flash",
@@ -543,10 +579,7 @@ async def ask_question_stream(request: QuestionRequest):
                     yield f"data: {json.dumps({'token': chunk.text, 'done': False})}\n\n"
 
         except Exception as gemini_err:
-            err = str(gemini_err)
-            print("Gemini stream error:", err)
-
-            # Groq streaming fallback
+            print("Gemini stream error:", gemini_err)
             try:
                 full_answer = ""
                 llm_used    = "groq/llama-3.1-8b"
@@ -562,11 +595,8 @@ async def ask_question_stream(request: QuestionRequest):
                     if token:
                         full_answer += token
                         yield f"data: {json.dumps({'token': token, 'done': False})}\n\n"
-
             except Exception as groq_err:
                 print("Groq stream error:", groq_err)
-
-                # NVIDIA fallback (non-streaming)
                 nvidia_answer = generate_with_nvidia(prompt)
                 if nvidia_answer:
                     full_answer = nvidia_answer
@@ -581,7 +611,6 @@ async def ask_question_stream(request: QuestionRequest):
         history.append(f"User: {question}")
         history.append(f"Assistant: {full_answer}")
         chat_memory[session_id] = history
-
         yield f"data: {json.dumps({'sources': sources, 'llm_used': llm_used, 'done': True})}\n\n"
 
     return StreamingResponse(
@@ -633,77 +662,52 @@ def _ragas_judge(prompt: str) -> float:
         )
         text = res.choices[0].message.content.strip()
         nums = re.findall(r"\d+\.?\d*", text)
-
         if not nums:
             return 0.75
-
         score = float(nums[0])
         if score > 1:
             score = score / 10
         if score == 0.0 and len(text) > 3:
             return 0.6
-
         return round(min(max(score, 0.0), 1.0), 3)
-
     except Exception:
         return 0.75
 
 
 def _ragas_score(question: str, answer: str, context: str, ground_truth: str) -> dict:
-    faithfulness = _ragas_judge(
-        "You are an evaluation judge. Reply with a single decimal number between "
-        "0.0 and 1.0 only. No words, no explanation.\n\n"
-        "Task: Score whether the answer uses ONLY information from the context.\n"
-        "1.0 = answer is completely grounded in context\n"
-        "0.5 = answer partially uses context\n"
-        "0.0 = answer adds information not in context\n\n"
-        f"Context: {context[:500]}\n"
-        f"Answer: {answer[:300]}\n\n"
-        "Score (single decimal number only, e.g. 0.8):"
-    )
-
-    answer_relevancy = _ragas_judge(
-        "You are an evaluation judge. Reply with a single decimal number between "
-        "0.0 and 1.0 only. No words, no explanation.\n\n"
-        "Task: Score whether the answer directly addresses the question.\n"
-        "1.0 = answer fully addresses the question\n"
-        "0.5 = answer partially addresses the question\n"
-        "0.0 = answer does not address the question\n\n"
-        f"Question: {question}\n"
-        f"Answer: {answer[:300]}\n\n"
-        "Score (single decimal number only, e.g. 0.9):"
-    )
-
-    context_precision = _ragas_judge(
-        "You are an evaluation judge. Reply with a single decimal number between "
-        "0.0 and 1.0 only. No words, no explanation.\n\n"
-        "Task: Score whether the retrieved context is precise and useful for the question.\n"
-        "1.0 = context is highly relevant and precise\n"
-        "0.5 = context is partially relevant\n"
-        "0.0 = context is not relevant\n\n"
-        f"Question: {question}\n"
-        f"Context: {context[:500]}\n\n"
-        "Score (single decimal number only, e.g. 0.7):"
-    )
-
-    context_recall = _ragas_judge(
-        "You are an evaluation judge. Reply with a single decimal number between "
-        "0.0 and 1.0 only. No words, no explanation.\n\n"
-        "Task: Score whether the context contains all the information needed "
-        "to match the ground truth answer.\n"
-        "1.0 = context contains all required information\n"
-        "0.5 = context contains some required information\n"
-        "0.0 = context is missing required information\n\n"
-        f"Ground Truth: {ground_truth}\n"
-        f"Context: {context[:500]}\n\n"
-        "Score (single decimal number only, e.g. 0.8):"
-    )
-
     return {
-        "faithfulness":      faithfulness,
-        "answer_relevancy":  answer_relevancy,
-        "context_precision": context_precision,
-        "context_recall":    context_recall
+        "faithfulness": _ragas_judge(
+            "You are an evaluation judge. Reply with a single decimal number between "
+            "0.0 and 1.0 only. No words, no explanation.\n\n"
+            "Task: Score whether the answer uses ONLY information from the context.\n"
+            "1.0 = completely grounded  0.5 = partial  0.0 = not grounded\n\n"
+            f"Context: {context[:500]}\nAnswer: {answer[:300]}\n\n"
+            "Score (e.g. 0.8):"
+        ),
+        "answer_relevancy": _ragas_judge(
+            "You are an evaluation judge. Reply with a single decimal number between "
+            "0.0 and 1.0 only. No words, no explanation.\n\n"
+            "Task: Score whether the answer directly addresses the question.\n"
+            "1.0 = fully addresses  0.5 = partially  0.0 = does not address\n\n"
+            f"Question: {question}\nAnswer: {answer[:300]}\n\n"
+            "Score (e.g. 0.9):"
+        ),
+        "context_precision": _ragas_judge(
+            "You are an evaluation judge. Reply with a single decimal number between "
+            "0.0 and 1.0 only. No words, no explanation.\n\n"
+            "Task: Score whether the context is precise and useful for the question.\n"
+            "1.0 = highly precise  0.5 = partial  0.0 = not relevant\n\n"
+            f"Question: {question}\nContext: {context[:500]}\n\n"
+            "Score (e.g. 0.7):"
+        ),
+        "context_recall": _ragas_judge(
+            "You are an evaluation judge. Reply with a single decimal number between "
+            "0.0 and 1.0 only. No words, no explanation.\n\n"
+            "Task: Score whether context contains all info to match ground truth.\n"
+            "1.0 = all info present  0.5 = partial  0.0 = missing info\n\n"
+            f"Ground Truth: {ground_truth}\nContext: {context[:500]}\n\n"
+            "Score (e.g. 0.8):"
+        )
     }
 
 
@@ -721,93 +725,62 @@ def _trulens_judge(prompt: str) -> float:
         )
         text = res.choices[0].message.content.strip()
         nums = re.findall(r"\d+\.?\d*", text)
-
         if not nums:
             return 0.75
-
         score = float(nums[0])
         if score > 1:
             score = score / 10
         if score == 0.0 and len(text) > 3:
             return 0.6
-
         return round(min(max(score, 0.0), 1.0), 3)
-
     except Exception:
         return 0.75
 
 
 def _trulens_score(question: str, answer: str, context: str) -> dict:
-    groundedness = _trulens_judge(
-        "You are an evaluation judge. Reply with a single decimal number between "
-        "0.0 and 1.0 only. No words, no explanation.\n\n"
-        "Task: Score whether every claim in the answer is supported by the context.\n"
-        "1.0 = all claims are fully supported by context\n"
-        "0.5 = some claims are supported\n"
-        "0.0 = claims are not supported by context\n\n"
-        f"Context: {context[:500]}\n"
-        f"Answer: {answer[:300]}\n\n"
-        "Score (single decimal number only, e.g. 0.9):"
-    )
-
-    answer_relevance = _trulens_judge(
-        "You are an evaluation judge. Reply with a single decimal number between "
-        "0.0 and 1.0 only. No words, no explanation.\n\n"
-        "Task: Score whether the answer directly and completely addresses the question.\n"
-        "1.0 = answer fully and directly addresses the question\n"
-        "0.5 = answer partially addresses the question\n"
-        "0.0 = answer does not address the question\n\n"
-        f"Question: {question}\n"
-        f"Answer: {answer[:300]}\n\n"
-        "Score (single decimal number only, e.g. 0.8):"
-    )
-
-    context_relevance = _trulens_judge(
-        "You are an evaluation judge. Reply with a single decimal number between "
-        "0.0 and 1.0 only. No words, no explanation.\n\n"
-        "Task: Score whether the retrieved context is relevant to the question.\n"
-        "1.0 = context is highly relevant to the question\n"
-        "0.5 = context is somewhat relevant\n"
-        "0.0 = context is not relevant to the question\n\n"
-        f"Question: {question}\n"
-        f"Context: {context[:500]}\n\n"
-        "Score (single decimal number only, e.g. 0.7):"
-    )
-
     return {
-        "groundedness":      groundedness,
-        "answer_relevance":  answer_relevance,
-        "context_relevance": context_relevance
+        "groundedness": _trulens_judge(
+            "You are an evaluation judge. Reply with a single decimal number between "
+            "0.0 and 1.0 only. No words, no explanation.\n\n"
+            "Task: Score whether every claim in the answer is supported by context.\n"
+            "1.0 = all claims supported  0.5 = some  0.0 = not supported\n\n"
+            f"Context: {context[:500]}\nAnswer: {answer[:300]}\n\n"
+            "Score (e.g. 0.9):"
+        ),
+        "answer_relevance": _trulens_judge(
+            "You are an evaluation judge. Reply with a single decimal number between "
+            "0.0 and 1.0 only. No words, no explanation.\n\n"
+            "Task: Score whether the answer directly addresses the question.\n"
+            "1.0 = fully addresses  0.5 = partially  0.0 = does not address\n\n"
+            f"Question: {question}\nAnswer: {answer[:300]}\n\n"
+            "Score (e.g. 0.8):"
+        ),
+        "context_relevance": _trulens_judge(
+            "You are an evaluation judge. Reply with a single decimal number between "
+            "0.0 and 1.0 only. No words, no explanation.\n\n"
+            "Task: Score whether the retrieved context is relevant to the question.\n"
+            "1.0 = highly relevant  0.5 = somewhat  0.0 = not relevant\n\n"
+            f"Question: {question}\nContext: {context[:500]}\n\n"
+            "Score (e.g. 0.7):"
+        )
     }
 
 
 # ─────────────────────────────────────────────
-# /evaluate — RAGAS + TruLens Endpoint
+# /evaluate — RAGAS + TruLens
 # ─────────────────────────────────────────────
 
 @app.post("/evaluate")
 async def run_evaluation():
     ragas_per_q   = []
     trulens_per_q = []
-
-    ragas_scores = {
-        "faithfulness":      [],
-        "answer_relevancy":  [],
-        "context_precision": [],
-        "context_recall":    []
-    }
-
-    trulens_scores = {
-        "groundedness":      [],
-        "answer_relevance":  [],
-        "context_relevance": []
-    }
+    ragas_scores  = {k: [] for k in ["faithfulness","answer_relevancy","context_precision","context_recall"]}
+    trulens_scores = {k: [] for k in ["groundedness","answer_relevance","context_relevance"]}
 
     for item in EVAL_DATASET:
         q  = item["question"]
         gt = item["ground_truth"]
-
-        context, sources = retrieve_context(q)
+        context, _ = retrieve_context(q)
 
         if context is None:
             context = ""
@@ -816,8 +789,7 @@ async def run_evaluation():
             eval_prompt = (
                 "Answer using only the context below. "
                 "Give a complete answer with full sentences.\n\n"
-                f"Context:\n{context}\n\n"
-                f"Question: {q}\n\nAnswer:"
+                f"Context:\n{context}\n\nQuestion: {q}\n\nAnswer:"
             )
             answer, _ = generate_answer(eval_prompt)
 
@@ -827,29 +799,14 @@ async def run_evaluation():
             ragas_scores[k].append(rq.get(k, 0.0))
 
         tq = _trulens_score(q, answer, context)
-        trulens_per_q.append({
-            "question": q,
-            "answer":   answer[:150],
-            **tq
-        })
+        trulens_per_q.append({"question": q, "answer": answer[:150], **tq})
         for k in trulens_scores:
             trulens_scores[k].append(tq.get(k, 0.0))
 
-    ragas_agg = {
-        k: round(float(np.mean(v)), 4)
-        for k, v in ragas_scores.items()
-    }
-    ragas_agg["overall"] = round(
-        float(np.mean(list(ragas_agg.values()))), 4
-    )
-
-    trulens_agg = {
-        k: round(float(np.mean(v)), 4)
-        for k, v in trulens_scores.items()
-    }
-    trulens_agg["overall"] = round(
-        float(np.mean(list(trulens_agg.values()))), 4
-    )
+    ragas_agg          = {k: round(float(np.mean(v)), 4) for k, v in ragas_scores.items()}
+    ragas_agg["overall"] = round(float(np.mean(list(ragas_agg.values()))), 4)
+    trulens_agg          = {k: round(float(np.mean(v)), 4) for k, v in trulens_scores.items()}
+    trulens_agg["overall"] = round(float(np.mean(list(trulens_agg.values()))), 4)
 
     return {
         "ragas":   {"scores": ragas_agg,   "per_question": ragas_per_q},
@@ -864,10 +821,7 @@ async def run_evaluation():
 @app.post("/upload")
 async def upload_document(file: UploadFile = File(...)):
     if not file.filename.endswith((".pdf", ".txt")):
-        raise HTTPException(
-            status_code=400,
-            detail="Only PDF and TXT supported"
-        )
+        raise HTTPException(status_code=400, detail="Only PDF and TXT supported")
 
     content      = await file.read()
     file_size_mb = len(content) / (1024 * 1024)
@@ -908,27 +862,19 @@ async def upload_document(file: UploadFile = File(...)):
                         "page":     page_num + 1,
                         "chunk_id": f"{file.filename}_p{page_num+1}_{total_chunks}"
                     }
-                    vectors.append({
-                        "id":       str(uuid.uuid4()),
-                        "values":   embedding,
-                        "metadata": meta
-                    })
+                    vectors.append({"id": str(uuid.uuid4()), "values": embedding, "metadata": meta})
                     add_to_bm25(chunk, meta)
                     total_chunks += 1
                     if len(vectors) >= 25:
-                        index.upsert(vectors)
-                        vectors = []
-                        gc.collect()
-                del text, chunks
-                gc.collect()
+                        index.upsert(vectors); vectors = []; gc.collect()
+                del text, chunks; gc.collect()
 
         elif file.filename.endswith(".txt"):
             with open(tmp_path, "r", encoding="utf-8", errors="ignore") as f:
                 text = f.read()
             text   = clean_text(text)
             chunks = splitter.split_text(text)
-            del text
-            gc.collect()
+            del text; gc.collect()
             for chunk in chunks:
                 if not chunk.strip():
                     continue
@@ -939,21 +885,14 @@ async def upload_document(file: UploadFile = File(...)):
                     "page":     1,
                     "chunk_id": f"{file.filename}_p1_{total_chunks}"
                 }
-                vectors.append({
-                    "id":       str(uuid.uuid4()),
-                    "values":   embedding,
-                    "metadata": meta
-                })
+                vectors.append({"id": str(uuid.uuid4()), "values": embedding, "metadata": meta})
                 add_to_bm25(chunk, meta)
                 total_chunks += 1
                 if len(vectors) >= 25:
-                    index.upsert(vectors)
-                    vectors = []
-                    gc.collect()
+                    index.upsert(vectors); vectors = []; gc.collect()
 
         if vectors:
-            index.upsert(vectors)
-            gc.collect()
+            index.upsert(vectors); gc.collect()
 
         if 'tmp_path' in locals() and tmp_path and os.path.exists(tmp_path):
             os.unlink(tmp_path)
@@ -969,8 +908,4 @@ async def upload_document(file: UploadFile = File(...)):
         print("Upload error:", e)
         if 'tmp_path' in locals() and tmp_path and os.path.exists(tmp_path):
             os.unlink(tmp_path)
-        raise HTTPException(
-            status_code=500,
-            detail=f"Upload failed: {str(e)}"
-        )
-    
+        raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")
