@@ -14,6 +14,7 @@ RAG System v4.1 with:
 """
 
 import os
+import re
 import gc
 import uuid
 import json
@@ -58,6 +59,24 @@ groq_client   = Groq(api_key=GROQ_API_KEY)
 
 pc    = Pinecone(api_key=PINECONE_API_KEY)
 index = pc.Index(INDEX_NAME)
+
+
+# ------------------------------------------------
+# Text Cleaner — remove separators and junk
+# ------------------------------------------------
+
+def clean_text(text: str) -> str:
+    """
+    Remove separator lines and decorative characters
+    that pollute chunks (===, ---, ***, ___, etc.)
+    """
+    text = re.sub(r'={3,}', ' ', text)     # remove ===...===
+    text = re.sub(r'-{3,}', ' ', text)     # remove ---...---
+    text = re.sub(r'\*{3,}', ' ', text)    # remove ***...***
+    text = re.sub(r'_{3,}', ' ', text)     # remove ___...___
+    text = re.sub(r'\n{3,}', '\n\n', text) # max 2 blank lines
+    text = re.sub(r' {2,}', ' ', text)     # collapse multiple spaces
+    return text.strip()
 
 
 # ------------------------------------------------
@@ -445,11 +464,6 @@ EVAL_DATASET = [
 
 @app.post("/evaluate")
 async def run_evaluation():
-    """
-    Run RAGAS + TruLens evaluation on 5 ground truth questions.
-    Returns scores for display in Streamlit EVAL tab.
-    """
-
     ragas_per_q   = []
     trulens_per_q = []
 
@@ -470,7 +484,6 @@ async def run_evaluation():
         q  = item["question"]
         gt = item["ground_truth"]
 
-        # Run RAG pipeline
         context, sources = retrieve_context(q)
 
         if context is None:
@@ -497,19 +510,16 @@ Answer:"""
                 else:
                     answer = "Error generating answer."
 
-        # ── RAGAS scoring via Groq as judge ──
         ragas_q_scores = _ragas_score(q, answer, context, gt)
         ragas_per_q.append({"question": q, **ragas_q_scores})
         for k in ragas_scores:
             ragas_scores[k].append(ragas_q_scores.get(k, 0.0))
 
-        # ── TruLens scoring via Groq as judge ──
         trulens_q_scores = _trulens_score(q, answer, context)
         trulens_per_q.append({"question": q, "answer": answer[:150], **trulens_q_scores})
         for k in trulens_scores:
             trulens_scores[k].append(trulens_q_scores.get(k, 0.0))
 
-    # Aggregate
     ragas_agg = {k: round(float(np.mean(v)), 4) for k, v in ragas_scores.items()}
     ragas_agg["overall"] = round(float(np.mean(list(ragas_agg.values()))), 4)
 
@@ -523,11 +533,6 @@ Answer:"""
 
 
 def _ragas_score(question: str, answer: str, context: str, ground_truth: str) -> dict:
-    """
-    Use Groq as LLM judge to approximate RAGAS metrics.
-    Each metric is scored 0.0 - 1.0.
-    """
-
     def judge(prompt: str) -> float:
         try:
             res = groq_client.chat.completions.create(
@@ -537,50 +542,23 @@ def _ragas_score(question: str, answer: str, context: str, ground_truth: str) ->
                 temperature=0
             )
             text = res.choices[0].message.content.strip()
-            # Extract first float found in response
-            import re
             nums = re.findall(r"\d+\.?\d*", text)
             score = float(nums[0]) if nums else 0.5
-            # Normalize if score > 1 (model may return 0-10 scale)
             if score > 1:
                 score = score / 10
             return round(min(max(score, 0.0), 1.0), 3)
         except Exception:
             return 0.5
 
-    faithfulness = judge(f"""Score from 0.0 to 1.0: Is this answer faithful to the context only?
-Context: {context[:500]}
-Answer: {answer[:300]}
-Score (0.0-1.0 only):""")
-
-    answer_relevancy = judge(f"""Score from 0.0 to 1.0: Is this answer relevant to the question?
-Question: {question}
-Answer: {answer[:300]}
-Score (0.0-1.0 only):""")
-
-    context_precision = judge(f"""Score from 0.0 to 1.0: Is this context precise and useful for answering the question?
-Question: {question}
-Context: {context[:500]}
-Score (0.0-1.0 only):""")
-
-    context_recall = judge(f"""Score from 0.0 to 1.0: Does the context contain all information needed to match this ground truth?
-Ground Truth: {ground_truth}
-Context: {context[:500]}
-Score (0.0-1.0 only):""")
-
     return {
-        "faithfulness":      faithfulness,
-        "answer_relevancy":  answer_relevancy,
-        "context_precision": context_precision,
-        "context_recall":    context_recall
+        "faithfulness":      judge(f"Score 0.0-1.0: Is this answer faithful to the context only?\nContext: {context[:500]}\nAnswer: {answer[:300]}\nScore:"),
+        "answer_relevancy":  judge(f"Score 0.0-1.0: Is this answer relevant to the question?\nQuestion: {question}\nAnswer: {answer[:300]}\nScore:"),
+        "context_precision": judge(f"Score 0.0-1.0: Is this context precise and useful for the question?\nQuestion: {question}\nContext: {context[:500]}\nScore:"),
+        "context_recall":    judge(f"Score 0.0-1.0: Does context contain all info to match ground truth?\nGround Truth: {ground_truth}\nContext: {context[:500]}\nScore:")
     }
 
 
 def _trulens_score(question: str, answer: str, context: str) -> dict:
-    """
-    Use Groq as LLM judge to approximate TruLens metrics.
-    """
-
     def judge(prompt: str) -> float:
         try:
             res = groq_client.chat.completions.create(
@@ -590,7 +568,6 @@ def _trulens_score(question: str, answer: str, context: str) -> dict:
                 temperature=0
             )
             text = res.choices[0].message.content.strip()
-            import re
             nums = re.findall(r"\d+\.?\d*", text)
             score = float(nums[0]) if nums else 0.5
             if score > 1:
@@ -599,25 +576,10 @@ def _trulens_score(question: str, answer: str, context: str) -> dict:
         except Exception:
             return 0.5
 
-    groundedness = judge(f"""Score 0.0-1.0: Is every claim in the answer supported by the context?
-Context: {context[:500]}
-Answer: {answer[:300]}
-Score (0.0-1.0 only):""")
-
-    answer_relevance = judge(f"""Score 0.0-1.0: Does the answer directly address the question?
-Question: {question}
-Answer: {answer[:300]}
-Score (0.0-1.0 only):""")
-
-    context_relevance = judge(f"""Score 0.0-1.0: Is the retrieved context relevant to the question?
-Question: {question}
-Context: {context[:500]}
-Score (0.0-1.0 only):""")
-
     return {
-        "groundedness":      groundedness,
-        "answer_relevance":  answer_relevance,
-        "context_relevance": context_relevance
+        "groundedness":      judge(f"Score 0.0-1.0: Is every claim in the answer supported by context?\nContext: {context[:500]}\nAnswer: {answer[:300]}\nScore:"),
+        "answer_relevance":  judge(f"Score 0.0-1.0: Does the answer directly address the question?\nQuestion: {question}\nAnswer: {answer[:300]}\nScore:"),
+        "context_relevance": judge(f"Score 0.0-1.0: Is the retrieved context relevant to the question?\nQuestion: {question}\nContext: {context[:500]}\nScore:")
     }
 
 
@@ -637,9 +599,9 @@ async def upload_document(file: UploadFile = File(...)):
         raise HTTPException(status_code=413,
                             detail=f"File too large ({file_size_mb:.1f}MB). Max {MAX_FILE_SIZE_MB}MB.")
 
-    tmp_path = None
+    tmp_path     = None
     total_chunks = 0
-    vectors = []
+    vectors      = []
 
     try:
         suffix = os.path.splitext(file.filename)[1]
@@ -655,32 +617,50 @@ async def upload_document(file: UploadFile = File(...)):
                 text = page.extract_text()
                 if not text or not text.strip():
                     continue
+
+                # Clean page text before chunking
+                text   = clean_text(text)
                 chunks = splitter.split_text(text)
+
                 for chunk in chunks:
                     if not chunk.strip():
                         continue
                     embedding = get_embedding(chunk)
-                    meta = {"text": chunk, "source": file.filename,
-                            "page": page_num + 1,
-                            "chunk_id": f"{file.filename}_p{page_num+1}_{total_chunks}"}
+                    meta = {
+                        "text":     chunk,
+                        "source":   file.filename,
+                        "page":     page_num + 1,
+                        "chunk_id": f"{file.filename}_p{page_num+1}_{total_chunks}"
+                    }
                     vectors.append({"id": str(uuid.uuid4()), "values": embedding, "metadata": meta})
                     add_to_bm25(chunk, meta)
                     total_chunks += 1
                     if len(vectors) >= 25:
                         index.upsert(vectors); vectors = []; gc.collect()
-                del text, chunks; gc.collect()
+
+                del text, chunks
+                gc.collect()
 
         elif file.filename.endswith(".txt"):
             with open(tmp_path, "r", encoding="utf-8", errors="ignore") as f:
                 text = f.read()
+
+            # Clean full text before chunking
+            text   = clean_text(text)
             chunks = splitter.split_text(text)
-            del text; gc.collect()
+            del text
+            gc.collect()
+
             for chunk in chunks:
                 if not chunk.strip():
                     continue
                 embedding = get_embedding(chunk)
-                meta = {"text": chunk, "source": file.filename, "page": 1,
-                        "chunk_id": f"{file.filename}_p1_{total_chunks}"}
+                meta = {
+                    "text":     chunk,
+                    "source":   file.filename,
+                    "page":     1,
+                    "chunk_id": f"{file.filename}_p1_{total_chunks}"
+                }
                 vectors.append({"id": str(uuid.uuid4()), "values": embedding, "metadata": meta})
                 add_to_bm25(chunk, meta)
                 total_chunks += 1
@@ -688,13 +668,18 @@ async def upload_document(file: UploadFile = File(...)):
                     index.upsert(vectors); vectors = []; gc.collect()
 
         if vectors:
-            index.upsert(vectors); gc.collect()
+            index.upsert(vectors)
+            gc.collect()
 
         if 'tmp_path' in locals() and tmp_path and os.path.exists(tmp_path):
             os.unlink(tmp_path)
 
-        return {"message": "Document indexed successfully", "filename": file.filename,
-                "total_chunks": total_chunks, "bm25_corpus": len(bm25_corpus)}
+        return {
+            "message":      "Document indexed successfully",
+            "filename":     file.filename,
+            "total_chunks": total_chunks,
+            "bm25_corpus":  len(bm25_corpus)
+        }
 
     except Exception as e:
         print("Upload error:", e)

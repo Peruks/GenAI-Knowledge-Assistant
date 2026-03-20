@@ -4,7 +4,11 @@ Store Embeddings in Pinecone using Gemini Embedding API
 Pipeline:
 Load Document
     ↓
-Clean + Validate Chunks
+Clean Text (remove separators)
+    ↓
+Split into Chunks
+    ↓
+Validate Chunks
     ↓
 Generate Gemini Embeddings
     ↓
@@ -54,40 +58,55 @@ index = pc.Index(INDEX_NAME)
 
 def get_embedding(text: str):
     result = client.models.embed_content(
-        model="gemini-embedding-001",   # 3072 dims — matches your index
+        model="gemini-embedding-001",
         contents=text
     )
     return result.embeddings[0].values
 
 
 # ------------------------------------------------
-# 5. Chunk Validation — skip TOC, dots, junk
+# 5. Text Cleaner — remove separators and junk
+# ------------------------------------------------
+
+def clean_text(text: str) -> str:
+    """
+    Remove separator lines, excess whitespace and decorative characters
+    that pollute chunks (===, ---, ***, ___, etc.)
+    """
+    text = re.sub(r'={3,}', ' ', text)     # remove ===...===
+    text = re.sub(r'-{3,}', ' ', text)     # remove ---...---
+    text = re.sub(r'\*{3,}', ' ', text)    # remove ***...***
+    text = re.sub(r'_{3,}', ' ', text)     # remove ___...___
+    text = re.sub(r'\n{3,}', '\n\n', text) # max 2 blank lines
+    text = re.sub(r' {2,}', ' ', text)     # collapse multiple spaces
+    return text.strip()
+
+
+# ------------------------------------------------
+# 6. Chunk Validator — skip TOC, dots, junk
 # ------------------------------------------------
 
 def is_valid_chunk(text: str) -> bool:
     """
-    Filter out low-quality chunks like:
-    - Table of contents lines (dotted lines + page numbers)
-    - Very short chunks
-    - Chunks that are mostly numbers or dots
+    Filter out low-quality chunks:
+    - Too short
+    - Mostly dots (TOC lines)
+    - Mostly digits
+    - No real words
     """
     text = text.strip()
 
-    # Too short
     if len(text) < 60:
         return False
 
-    # Mostly dots (TOC lines like "Chapter 1 ........... 12")
     dot_ratio = text.count('.') / max(len(text), 1)
     if dot_ratio > 0.25:
         return False
 
-    # Mostly digits
     digit_ratio = sum(c.isdigit() for c in text) / max(len(text), 1)
     if digit_ratio > 0.4:
         return False
 
-    # Only whitespace or symbols
     if not re.search(r'[a-zA-Z]{3,}', text):
         return False
 
@@ -95,7 +114,7 @@ def is_valid_chunk(text: str) -> bool:
 
 
 # ------------------------------------------------
-# 6. Load Document
+# 7. Load Document
 # ------------------------------------------------
 
 DOC_PATH = "data/company_policy.txt"
@@ -105,23 +124,25 @@ print(f"Loading document: {DOC_PATH}")
 with open(DOC_PATH, "r", encoding="utf-8") as f:
     text = f.read()
 
+# Clean before splitting
+text = clean_text(text)
+
 print(f"Document loaded — {len(text)} characters")
 
 
 # ------------------------------------------------
-# 7. Split into Chunks
+# 8. Split into Chunks
 # ------------------------------------------------
 
 splitter = RecursiveCharacterTextSplitter(
-    chunk_size=500,      # increased from 200 — better semantic chunks
-    chunk_overlap=100    # increased from 50 — better context continuity
+    chunk_size=500,
+    chunk_overlap=100
 )
 
 raw_chunks = splitter.split_text(text)
 
 print(f"Raw chunks: {len(raw_chunks)}")
 
-# Filter out junk chunks
 chunks = [c for c in raw_chunks if is_valid_chunk(c)]
 
 print(f"Valid chunks after filtering: {len(chunks)}")
@@ -129,7 +150,7 @@ print(f"Skipped: {len(raw_chunks) - len(chunks)} junk chunks")
 
 
 # ------------------------------------------------
-# 8. Generate Embeddings and Upsert
+# 9. Generate Embeddings and Upsert
 # ------------------------------------------------
 
 vectors  = []
@@ -146,13 +167,12 @@ for i, chunk in enumerate(chunks):
             "id": str(uuid.uuid4()),
             "values": embedding,
             "metadata": {
-                "text": chunk,
-                "source": DOC_PATH,
+                "text":        chunk,
+                "source":      DOC_PATH,
                 "chunk_index": i
             }
         })
 
-        # Batch upsert every 25 vectors
         if len(vectors) >= 25:
             index.upsert(vectors)
             uploaded += len(vectors)
@@ -164,7 +184,6 @@ for i, chunk in enumerate(chunks):
         print(f"  Error on chunk {i}: {e}")
         continue
 
-# Upload remaining
 if vectors:
     index.upsert(vectors)
     uploaded += len(vectors)
@@ -176,7 +195,7 @@ print(f"Index: {INDEX_NAME}")
 
 
 # ------------------------------------------------
-# 9. Verify Upload
+# 10. Verify Upload
 # ------------------------------------------------
 
 stats = index.describe_index_stats()
