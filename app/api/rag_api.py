@@ -141,13 +141,76 @@ def warmup_bm25():
 
 
 # ─────────────────────────────────────────────
-# Text Splitter + Embedding
+# Text Splitter — Section-aware + Recursive fallback
 # ─────────────────────────────────────────────
 
-splitter = RecursiveCharacterTextSplitter(
+# Fallback splitter for long sections that exceed 500 tokens
+_fallback_splitter = RecursiveCharacterTextSplitter(
     chunk_size=500,
-    chunk_overlap=100
+    chunk_overlap=80,
+    separators=["\n\n", "\n", ". ", "! ", "? ", " ", ""]
 )
+
+
+def split_into_sections(text: str) -> list:
+    """
+    Section-aware chunking — splits at natural document boundaries FIRST,
+    then falls back to RecursiveCharacterTextSplitter for long sections.
+
+    Detects:
+    - Numbered sections: "1. TITLE", "2.1 Sub-section"
+    - ALL CAPS headings: "DATA PRIVACY AND SECURITY"
+    - Article/Chapter/Section/Part markers
+
+    Why this matters for Context Relevance:
+    Each chunk stays within one topic → retrieved chunks are
+    topically coherent → TruLens scores Context Relevance higher.
+    """
+    section_pattern = re.compile(
+        r'(?=\n(?:'
+        r'\d+[\.\d]*\s+[A-Z]'
+        r'|[A-Z][A-Z\s]{4,}(?:\n|:)'
+        r'|(?:Article|Chapter|Section|Part)\s+\d+'
+        r'))',
+        re.MULTILINE
+    )
+
+    raw_sections = section_pattern.split(text)
+    chunks       = []
+
+    for section in raw_sections:
+        section = section.strip()
+        if not section:
+            continue
+
+        if len(section) <= 500:
+            # Short enough — keep as one complete chunk
+            if len(section) >= 60:
+                chunks.append(section)
+        else:
+            # Too long — split at paragraph boundaries
+            sub = _fallback_splitter.split_text(section)
+            chunks.extend([c for c in sub if len(c.strip()) >= 60])
+
+    # If section detection found nothing, fall back entirely
+    if not chunks:
+        chunks = _fallback_splitter.split_text(text)
+
+    return chunks
+
+
+def is_valid_chunk(text: str) -> bool:
+    """Filter junk chunks — TOC lines, mostly digits, no real words."""
+    text = text.strip()
+    if len(text) < 60:
+        return False
+    if text.count('.') / max(len(text), 1) > 0.25:
+        return False
+    if sum(c.isdigit() for c in text) / max(len(text), 1) > 0.4:
+        return False
+    if not re.search(r'[a-zA-Z]{3,}', text):
+        return False
+    return True
 
 
 def get_embedding(text: str):
@@ -733,10 +796,8 @@ async def upload_document(file: UploadFile = File(...)):
                 if not text or not text.strip():
                     continue
                 text   = clean_text(text)
-                chunks = splitter.split_text(text)
+                chunks = [c for c in split_into_sections(text) if is_valid_chunk(c)]
                 for chunk in chunks:
-                    if not chunk.strip():
-                        continue
                     embedding = get_embedding(chunk)
                     meta = {"text": chunk, "source": file.filename, "page": page_num + 1,
                             "chunk_id": file.filename + "_p" + str(page_num+1) + "_" + str(total_chunks)}
@@ -751,11 +812,9 @@ async def upload_document(file: UploadFile = File(...)):
             with open(tmp_path, "r", encoding="utf-8", errors="ignore") as f:
                 text = f.read()
             text   = clean_text(text)
-            chunks = splitter.split_text(text)
+            chunks = [c for c in split_into_sections(text) if is_valid_chunk(c)]
             del text; gc.collect()
             for chunk in chunks:
-                if not chunk.strip():
-                    continue
                 embedding = get_embedding(chunk)
                 meta = {"text": chunk, "source": file.filename, "page": 1,
                         "chunk_id": file.filename + "_p1_" + str(total_chunks)}
