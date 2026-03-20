@@ -8,6 +8,8 @@ google-genai
 
 groq
 
+openai
+
 python-dotenv
 requests
 numpy
@@ -16,3 +18,11 @@ pypdf
 langchain-text-splitters
 
 rank-bm25
+
+# LangChain
+langchain
+langchain-core
+langchain-google-genai
+langchain-groq
+langchain-openai
+langchain-pinecone

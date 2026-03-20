@@ -1,6 +1,6 @@
 """
 Enterprise GenAI Knowledge Assistant
-RAG System v4.1 with:
+RAG System v4.2 with:
 - Gemini embeddings
 - Pinecone vector DB
 - BM25 keyword search (Hybrid Retrieval)
@@ -9,6 +9,8 @@ RAG System v4.1 with:
 - Streaming responses
 - Gemini LLM (primary)
 - Groq fallback
+- NVIDIA NIM fallback (via LangChain)
+- LangChain RetrievalQA chain (/ask-lc endpoint)
 - Document upload
 - RAGAS + TruLens evaluation endpoint
 """
@@ -45,6 +47,7 @@ load_dotenv()
 GEMINI_API_KEY   = os.getenv("GEMINI_API_KEY")
 PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
 GROQ_API_KEY     = os.getenv("GROQ_API_KEY")
+NVIDIA_API_KEY   = os.getenv("NVIDIA_API_KEY")
 
 INDEX_NAME       = "enterprise-rag-index"
 MAX_FILE_SIZE_MB = 10
@@ -81,7 +84,7 @@ def clean_text(text: str) -> str:
 # FastAPI App
 # ─────────────────────────────────────────────
 
-app = FastAPI(title="Enterprise GenAI Assistant", version="4.1")
+app = FastAPI(title="Enterprise GenAI Assistant", version="4.2")
 
 app.add_middleware(
     CORSMiddleware,
@@ -92,7 +95,7 @@ app.add_middleware(
 
 
 # ─────────────────────────────────────────────
-# Request Model
+# Request Models
 # ─────────────────────────────────────────────
 
 class QuestionRequest(BaseModel):
@@ -133,7 +136,7 @@ def add_to_bm25(text: str, metadata: dict):
 
 
 # ─────────────────────────────────────────────
-# BM25 Warmup on Startup
+# BM25 Warmup
 # ─────────────────────────────────────────────
 
 @app.on_event("startup")
@@ -289,8 +292,8 @@ def retrieve_context(question: str):
             seen_v.add(r["text"])
             unique_vector.append(r)
 
-    seen_b       = set()
-    unique_bm25  = []
+    seen_b      = set()
+    unique_bm25 = []
     for r in all_bm25:
         if r["text"] not in seen_b:
             seen_b.add(r["text"])
@@ -324,6 +327,8 @@ def build_prompt(question: str, context: str, history_text: str) -> str:
         "Rules:\n"
         "- Use ONLY the information from the context below\n"
         "- Do NOT invent or assume information\n"
+        "- Always give complete answers with full sentences\n"
+        "- Include relevant details from context, not just numbers\n"
         "- If the answer is not in the context say: "
         "\"The information is not available in the provided documents\"\n\n"
         f"Conversation History:\n{history_text}\n\n"
@@ -353,7 +358,68 @@ def generate_with_groq(prompt: str) -> str:
         return response.choices[0].message.content
     except Exception as e:
         print("Groq error:", e)
-        return "Both AI models are currently unavailable."
+        return None
+
+
+def generate_with_nvidia(prompt: str) -> str:
+    """
+    NVIDIA NIM fallback via OpenAI-compatible API.
+    Uses meta/llama-3.1-8b-instruct on NVIDIA's inference infrastructure.
+    """
+    try:
+        from openai import OpenAI as OpenAIClient
+        nvidia_client = OpenAIClient(
+            api_key=NVIDIA_API_KEY,
+            base_url="https://integrate.api.nvidia.com/v1"
+        )
+        response = nvidia_client.chat.completions.create(
+            model="meta/llama-3.1-8b-instruct",
+            messages=[
+                {
+                    "role":    "system",
+                    "content": "Answer using provided company documents only."
+                },
+                {
+                    "role":    "user",
+                    "content": prompt
+                }
+            ],
+            max_tokens=1024,
+            temperature=0.2
+        )
+        return response.choices[0].message.content
+    except Exception as e:
+        print("NVIDIA error:", e)
+        return None
+
+
+def generate_answer(prompt: str) -> tuple[str, str]:
+    """
+    Try LLMs in order: Gemini → Groq → NVIDIA NIM
+    Returns (answer, llm_used)
+    """
+    # 1. Gemini
+    try:
+        response = gemini_client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=prompt
+        )
+        return response.text, "gemini-2.5-flash"
+    except Exception as e:
+        err = str(e)
+        print("Gemini error:", err)
+
+    # 2. Groq
+    answer = generate_with_groq(prompt)
+    if answer:
+        return answer, "groq/llama-3.1-8b"
+
+    # 3. NVIDIA NIM
+    answer = generate_with_nvidia(prompt)
+    if answer:
+        return answer, "nvidia/llama-3.1-8b"
+
+    return "All AI models are currently unavailable. Please try again.", "none"
 
 
 # ─────────────────────────────────────────────
@@ -363,16 +429,19 @@ def generate_with_groq(prompt: str) -> str:
 @app.get("/")
 def root():
     return {
-        "message":     "Enterprise GenAI Assistant API",
-        "version":     "4.1",
-        "retrieval":   "hybrid (vector + BM25 + RRF)",
-        "llm_primary": "gemini-2.5-flash",
-        "bm25_corpus": len(bm25_corpus)
+        "message":      "Enterprise GenAI Assistant API",
+        "version":      "4.2",
+        "retrieval":    "hybrid (vector + BM25 + RRF)",
+        "llm_primary":  "gemini-2.5-flash",
+        "llm_fallback1": "groq/llama-3.1-8b",
+        "llm_fallback2": "nvidia/llama-3.1-8b",
+        "langchain":    "/ask-lc endpoint available",
+        "bm25_corpus":  len(bm25_corpus)
     }
 
 
 # ─────────────────────────────────────────────
-# /ask — Standard Endpoint
+# /ask — Standard Endpoint (custom pipeline)
 # ─────────────────────────────────────────────
 
 @app.post("/ask")
@@ -388,24 +457,12 @@ def ask_question(request: QuestionRequest):
             return {
                 "answer":     "No relevant information found in the knowledge base.",
                 "sources":    [],
-                "session_id": session_id
+                "session_id": session_id,
+                "llm_used":   "none"
             }
 
-        prompt = build_prompt(question, context, history_text)
-
-        try:
-            response = gemini_client.models.generate_content(
-                model="gemini-2.5-flash",
-                contents=prompt
-            )
-            answer = response.text
-        except Exception as e:
-            err = str(e)
-            print("Gemini error:", err)
-            if "429" in err or "RESOURCE_EXHAUSTED" in err or "quota" in err.lower():
-                answer = generate_with_groq(prompt)
-            else:
-                answer = "AI processing error. Please try again."
+        prompt         = build_prompt(question, context, history_text)
+        answer, llm    = generate_answer(prompt)
 
         history.append(f"User: {question}")
         history.append(f"Assistant: {answer}")
@@ -414,12 +471,36 @@ def ask_question(request: QuestionRequest):
         return {
             "answer":     answer,
             "sources":    sources,
-            "session_id": session_id
+            "session_id": session_id,
+            "llm_used":   llm
         }
 
     except Exception as e:
         print("ERROR in /ask:", e)
         raise HTTPException(status_code=500, detail="Internal RAG pipeline error")
+
+
+# ─────────────────────────────────────────────
+# /ask-lc — LangChain Endpoint
+# ─────────────────────────────────────────────
+
+@app.post("/ask-lc")
+def ask_langchain_endpoint(request: QuestionRequest):
+    """
+    LangChain RetrievalQA pipeline.
+    LLM fallback: Gemini → Groq → NVIDIA NIM
+    Uses ConversationBufferWindowMemory (last 5 exchanges)
+    """
+    try:
+        from app.rag.langchain_rag import ask_langchain
+        result = ask_langchain(request.question, request.session_id)
+        return result
+    except Exception as e:
+        print("LangChain endpoint error:", e)
+        raise HTTPException(
+            status_code=500,
+            detail=f"LangChain pipeline error: {str(e)}"
+        )
 
 
 # ─────────────────────────────────────────────
@@ -448,6 +529,9 @@ async def ask_question_stream(request: QuestionRequest):
 
     async def stream_tokens():
         full_answer = ""
+        llm_used    = "gemini-2.5-flash"
+
+        # Gemini streaming
         try:
             response = gemini_client.models.generate_content_stream(
                 model="gemini-2.5-flash",
@@ -460,34 +544,45 @@ async def ask_question_stream(request: QuestionRequest):
 
         except Exception as gemini_err:
             err = str(gemini_err)
-            if "429" in err or "RESOURCE_EXHAUSTED" in err or "quota" in err.lower():
-                try:
-                    full_answer = ""
-                    stream = groq_client.chat.completions.create(
-                        model="llama-3.1-8b-instant",
-                        messages=[{"role": "user", "content": prompt}],
-                        max_tokens=1024,
-                        temperature=0.2,
-                        stream=True
-                    )
-                    for chunk in stream:
-                        token = chunk.choices[0].delta.content or ""
-                        if token:
-                            full_answer += token
-                            yield f"data: {json.dumps({'token': token, 'done': False})}\n\n"
-                except Exception:
-                    msg = "Both LLMs failed. Please try again."
+            print("Gemini stream error:", err)
+
+            # Groq streaming fallback
+            try:
+                full_answer = ""
+                llm_used    = "groq/llama-3.1-8b"
+                stream = groq_client.chat.completions.create(
+                    model="llama-3.1-8b-instant",
+                    messages=[{"role": "user", "content": prompt}],
+                    max_tokens=1024,
+                    temperature=0.2,
+                    stream=True
+                )
+                for chunk in stream:
+                    token = chunk.choices[0].delta.content or ""
+                    if token:
+                        full_answer += token
+                        yield f"data: {json.dumps({'token': token, 'done': False})}\n\n"
+
+            except Exception as groq_err:
+                print("Groq stream error:", groq_err)
+
+                # NVIDIA fallback (non-streaming)
+                nvidia_answer = generate_with_nvidia(prompt)
+                if nvidia_answer:
+                    full_answer = nvidia_answer
+                    llm_used    = "nvidia/llama-3.1-8b"
+                    yield f"data: {json.dumps({'token': nvidia_answer, 'done': False})}\n\n"
+                else:
+                    msg = "All LLMs failed. Please try again."
                     yield f"data: {json.dumps({'token': msg, 'done': False})}\n\n"
                     full_answer = msg
-            else:
-                msg = "AI processing error."
-                yield f"data: {json.dumps({'token': msg, 'done': False})}\n\n"
-                full_answer = msg
+                    llm_used    = "none"
 
         history.append(f"User: {question}")
         history.append(f"Assistant: {full_answer}")
         chat_memory[session_id] = history
-        yield f"data: {json.dumps({'sources': sources, 'done': True})}\n\n"
+
+        yield f"data: {json.dumps({'sources': sources, 'llm_used': llm_used, 'done': True})}\n\n"
 
     return StreamingResponse(
         stream_tokens(),
@@ -529,11 +624,6 @@ EVAL_DATASET = [
 # ─────────────────────────────────────────────
 
 def _ragas_judge(prompt: str) -> float:
-    """
-    Call Groq as LLM judge.
-    Forces a numeric response with explicit instructions.
-    Falls back to 0.75 if no number found (assume decent).
-    """
     try:
         res  = groq_client.chat.completions.create(
             model="llama-3.1-8b-instant",
@@ -548,11 +638,8 @@ def _ragas_judge(prompt: str) -> float:
             return 0.75
 
         score = float(nums[0])
-
         if score > 1:
             score = score / 10
-
-        # If Groq returns exactly 0 with text, treat as unknown not failure
         if score == 0.0 and len(text) > 3:
             return 0.6
 
@@ -563,11 +650,6 @@ def _ragas_judge(prompt: str) -> float:
 
 
 def _ragas_score(question: str, answer: str, context: str, ground_truth: str) -> dict:
-    """
-    Approximate RAGAS metrics using Groq as LLM judge.
-    Each metric scored 0.0 - 1.0.
-    """
-
     faithfulness = _ragas_judge(
         "You are an evaluation judge. Reply with a single decimal number between "
         "0.0 and 1.0 only. No words, no explanation.\n\n"
@@ -630,11 +712,6 @@ def _ragas_score(question: str, answer: str, context: str, ground_truth: str) ->
 # ─────────────────────────────────────────────
 
 def _trulens_judge(prompt: str) -> float:
-    """
-    Call Groq as LLM judge for TruLens metrics.
-    Forces a numeric response with explicit instructions.
-    Falls back to 0.75 if no number found.
-    """
     try:
         res  = groq_client.chat.completions.create(
             model="llama-3.1-8b-instant",
@@ -649,10 +726,8 @@ def _trulens_judge(prompt: str) -> float:
             return 0.75
 
         score = float(nums[0])
-
         if score > 1:
             score = score / 10
-
         if score == 0.0 and len(text) > 3:
             return 0.6
 
@@ -663,11 +738,6 @@ def _trulens_judge(prompt: str) -> float:
 
 
 def _trulens_score(question: str, answer: str, context: str) -> dict:
-    """
-    Approximate TruLens metrics using Groq as LLM judge.
-    Each metric scored 0.0 - 1.0.
-    """
-
     groundedness = _trulens_judge(
         "You are an evaluation judge. Reply with a single decimal number between "
         "0.0 and 1.0 only. No words, no explanation.\n\n"
@@ -717,11 +787,6 @@ def _trulens_score(question: str, answer: str, context: str) -> dict:
 
 @app.post("/evaluate")
 async def run_evaluation():
-    """
-    Run RAGAS + TruLens evaluation on 5 ground truth questions.
-    Returns aggregated + per-question scores for Streamlit EVAL tab.
-    """
-
     ragas_per_q   = []
     trulens_per_q = []
 
@@ -749,31 +814,18 @@ async def run_evaluation():
             answer  = "No relevant information found."
         else:
             eval_prompt = (
-                "Answer using only the context below.\n\n"
+                "Answer using only the context below. "
+                "Give a complete answer with full sentences.\n\n"
                 f"Context:\n{context}\n\n"
-                f"Question: {q}\n\n"
-                "Answer:"
+                f"Question: {q}\n\nAnswer:"
             )
-            try:
-                response = gemini_client.models.generate_content(
-                    model="gemini-2.5-flash",
-                    contents=eval_prompt
-                )
-                answer = response.text
-            except Exception as e:
-                err = str(e)
-                if "429" in err or "quota" in err.lower():
-                    answer = generate_with_groq(eval_prompt)
-                else:
-                    answer = "Error generating answer."
+            answer, _ = generate_answer(eval_prompt)
 
-        # RAGAS scoring
         rq = _ragas_score(q, answer, context, gt)
         ragas_per_q.append({"question": q, **rq})
         for k in ragas_scores:
             ragas_scores[k].append(rq.get(k, 0.0))
 
-        # TruLens scoring
         tq = _trulens_score(q, answer, context)
         trulens_per_q.append({
             "question": q,
@@ -783,7 +835,6 @@ async def run_evaluation():
         for k in trulens_scores:
             trulens_scores[k].append(tq.get(k, 0.0))
 
-    # Aggregate
     ragas_agg = {
         k: round(float(np.mean(v)), 4)
         for k, v in ragas_scores.items()
@@ -845,10 +896,8 @@ async def upload_document(file: UploadFile = File(...)):
                 text = page.extract_text()
                 if not text or not text.strip():
                     continue
-
                 text   = clean_text(text)
                 chunks = splitter.split_text(text)
-
                 for chunk in chunks:
                     if not chunk.strip():
                         continue
@@ -870,19 +919,16 @@ async def upload_document(file: UploadFile = File(...)):
                         index.upsert(vectors)
                         vectors = []
                         gc.collect()
-
                 del text, chunks
                 gc.collect()
 
         elif file.filename.endswith(".txt"):
             with open(tmp_path, "r", encoding="utf-8", errors="ignore") as f:
                 text = f.read()
-
             text   = clean_text(text)
             chunks = splitter.split_text(text)
             del text
             gc.collect()
-
             for chunk in chunks:
                 if not chunk.strip():
                     continue
