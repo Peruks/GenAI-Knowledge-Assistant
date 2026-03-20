@@ -973,3 +973,4 @@ async def upload_document(file: UploadFile = File(...)):
             status_code=500,
             detail=f"Upload failed: {str(e)}"
         )
+    
