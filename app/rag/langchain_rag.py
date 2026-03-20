@@ -2,31 +2,17 @@
 LangChain RAG Chain Module
 NEXUS Enterprise Knowledge Assistant
 
-LLM Priority:
-1. Gemini 2.5 Flash      (Google — primary)
-2. Groq llama-3.1-8b     (Groq — fallback 1)
-3. NVIDIA llama-3.1-8b   (NVIDIA NIM — fallback 2)
+Uses newer LangChain API (langchain-core, langchain-community)
+instead of deprecated langchain.chains
 
-Features:
-- LangChain RetrievalQA chain
-- ConversationBufferWindowMemory (last 5 exchanges)
-- PromptTemplate for structured prompts
-- LLM fallback chain with automatic switching
-- Pinecone as vector store via LangChain
+LLM Priority:
+1. Gemini 2.5 Flash   (primary)
+2. Groq llama-3.1-8b  (fallback 1)
+3. NVIDIA NIM         (fallback 2)
 """
 
 import os
 from dotenv import load_dotenv
-
-from langchain.chains import RetrievalQA
-from langchain.memory import ConversationBufferWindowMemory
-from langchain.prompts import PromptTemplate
-from langchain_core.messages import HumanMessage
-
-from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
-from langchain_groq import ChatGroq
-from langchain_openai import ChatOpenAI
-from langchain_pinecone import PineconeVectorStore
 
 load_dotenv()
 
@@ -38,20 +24,21 @@ INDEX_NAME       = "enterprise-rag-index"
 
 
 # ─────────────────────────────────────────────
-# 1. LLM Definitions
+# LLM Definitions
 # ─────────────────────────────────────────────
 
 def get_gemini_llm():
+    from langchain_google_genai import ChatGoogleGenerativeAI
     return ChatGoogleGenerativeAI(
         model="gemini-2.5-flash",
         google_api_key=GEMINI_API_KEY,
         temperature=0.2,
-        max_output_tokens=1024,
         convert_system_message_to_human=True
     )
 
 
 def get_groq_llm():
+    from langchain_groq import ChatGroq
     return ChatGroq(
         model="llama-3.1-8b-instant",
         groq_api_key=GROQ_API_KEY,
@@ -61,11 +48,7 @@ def get_groq_llm():
 
 
 def get_nvidia_llm():
-    """
-    NVIDIA NIM via OpenAI-compatible API.
-    Uses langchain_openai.ChatOpenAI with NVIDIA base URL.
-    Free at build.nvidia.com
-    """
+    from langchain_openai import ChatOpenAI
     return ChatOpenAI(
         model="meta/llama-3.1-8b-instruct",
         openai_api_key=NVIDIA_API_KEY,
@@ -76,21 +59,13 @@ def get_nvidia_llm():
 
 
 # ─────────────────────────────────────────────
-# 2. LLM with Fallback Chain
+# LLM with Fallback Chain
 # ─────────────────────────────────────────────
 
 def get_llm_with_fallback():
-    """
-    Returns LLM with automatic fallback:
-    Gemini → Groq → NVIDIA NIM
-
-    LangChain .with_fallbacks() automatically tries
-    the next LLM if the current one raises any exception.
-    """
-    primary  = get_gemini_llm()
+    primary   = get_gemini_llm()
     fallback1 = get_groq_llm()
     fallback2 = get_nvidia_llm()
-
     return primary.with_fallbacks(
         [fallback1, fallback2],
         exceptions_to_handle=(Exception,)
@@ -98,14 +73,11 @@ def get_llm_with_fallback():
 
 
 # ─────────────────────────────────────────────
-# 3. Embeddings
+# Embeddings
 # ─────────────────────────────────────────────
 
 def get_embeddings():
-    """
-    Gemini embeddings via LangChain.
-    Same model as main pipeline for consistency.
-    """
+    from langchain_google_genai import GoogleGenerativeAIEmbeddings
     return GoogleGenerativeAIEmbeddings(
         model="models/gemini-embedding-001",
         google_api_key=GEMINI_API_KEY
@@ -113,16 +85,13 @@ def get_embeddings():
 
 
 # ─────────────────────────────────────────────
-# 4. Vector Store Retriever
+# Retriever
 # ─────────────────────────────────────────────
 
 def get_retriever(top_k: int = 5):
-    """
-    Pinecone vector store wrapped in LangChain.
-    Returns a retriever that fetches top-k relevant chunks.
-    """
-    embeddings   = get_embeddings()
-    vectorstore  = PineconeVectorStore(
+    from langchain_pinecone import PineconeVectorStore
+    embeddings  = get_embeddings()
+    vectorstore = PineconeVectorStore(
         index_name=INDEX_NAME,
         embedding=embeddings,
         pinecone_api_key=PINECONE_API_KEY
@@ -134,12 +103,10 @@ def get_retriever(top_k: int = 5):
 
 
 # ─────────────────────────────────────────────
-# 5. Prompt Template
+# Prompt Template
 # ─────────────────────────────────────────────
 
-RAG_PROMPT = PromptTemplate(
-    input_variables=["context", "question"],
-    template="""You are an AI assistant for an enterprise knowledge base.
+RAG_PROMPT_TEMPLATE = """You are an AI assistant for an enterprise knowledge base.
 
 Rules:
 - Answer using ONLY the information in the context below
@@ -155,23 +122,17 @@ Question:
 {question}
 
 Answer:"""
-)
 
 
 # ─────────────────────────────────────────────
-# 6. Conversation Memory
+# Conversation Memory Store
 # ─────────────────────────────────────────────
 
-# Per-session memory store
-_memory_store: dict[str, ConversationBufferWindowMemory] = {}
+_memory_store = {}
 
 
-def get_memory(session_id: str) -> ConversationBufferWindowMemory:
-    """
-    Returns ConversationBufferWindowMemory for a session.
-    Keeps last 5 exchanges to avoid context overflow on free tier.
-    Creates new memory if session doesn't exist.
-    """
+def get_memory(session_id: str):
+    from langchain.memory import ConversationBufferWindowMemory
     if session_id not in _memory_store:
         _memory_store[session_id] = ConversationBufferWindowMemory(
             k=5,
@@ -182,87 +143,67 @@ def get_memory(session_id: str) -> ConversationBufferWindowMemory:
     return _memory_store[session_id]
 
 
-def clear_memory(session_id: str):
-    """Clear memory for a specific session."""
-    if session_id in _memory_store:
-        del _memory_store[session_id]
-
-
 # ─────────────────────────────────────────────
-# 7. RetrievalQA Chain Builder
-# ─────────────────────────────────────────────
-
-def build_chain():
-    """
-    Build the LangChain RetrievalQA chain.
-    Components:
-    - LLM: Gemini → Groq → NVIDIA fallback
-    - Retriever: Pinecone vector store (top-5)
-    - Prompt: structured RAG template
-    - Chain type: stuff (concatenate all retrieved chunks)
-    """
-    llm       = get_llm_with_fallback()
-    retriever = get_retriever(top_k=5)
-
-    chain = RetrievalQA.from_chain_type(
-        llm=llm,
-        chain_type="stuff",
-        retriever=retriever,
-        return_source_documents=True,
-        chain_type_kwargs={
-            "prompt": RAG_PROMPT,
-            "verbose": False
-        }
-    )
-    return chain
-
-
-# ─────────────────────────────────────────────
-# 8. Main Ask Function
+# Main Ask Function — using LCEL (LangChain Expression Language)
 # ─────────────────────────────────────────────
 
 def ask_langchain(question: str, session_id: str) -> dict:
     """
-    Run a question through the LangChain RAG pipeline.
-
-    Args:
-        question:   User question string
-        session_id: Session ID for memory isolation
-
-    Returns:
-        dict with answer, sources, session_id, llm_used
+    Run question through LangChain RAG pipeline using LCEL.
+    Uses RunnablePassthrough + StrOutputParser instead of
+    deprecated RetrievalQA chain.
     """
-
     try:
-        chain  = build_chain()
-        memory = get_memory(session_id)
+        from langchain_core.prompts import ChatPromptTemplate
+        from langchain_core.output_parsers import StrOutputParser
+        from langchain_core.runnables import RunnablePassthrough
 
-        # Build history context from memory
-        history_messages = memory.load_memory_variables({})
-        history_text     = ""
+        llm       = get_llm_with_fallback()
+        retriever = get_retriever(top_k=5)
+        memory    = get_memory(session_id)
 
-        chat_history = history_messages.get("chat_history", [])
+        # Get chat history
+        history_vars = memory.load_memory_variables({})
+        chat_history = history_vars.get("chat_history", [])
+
+        history_text = ""
         if chat_history:
+            from langchain_core.messages import HumanMessage
             pairs = []
             for msg in chat_history:
                 role    = "User" if isinstance(msg, HumanMessage) else "Assistant"
                 content = msg.content[:200]
-                pairs.append(f"{role}: {content}")
+                pairs.append(role + ": " + content)
             history_text = "\n".join(pairs)
 
-        # Prepend history to question if exists
         full_question = question
         if history_text:
             full_question = (
-                f"Previous conversation:\n{history_text}\n\n"
-                f"Current question: {question}"
+                "Previous conversation:\n"
+                + history_text
+                + "\n\nCurrent question: "
+                + question
             )
 
-        # Run chain
-        result = chain.invoke({"query": full_question})
+        # Build LCEL chain
+        prompt = ChatPromptTemplate.from_template(RAG_PROMPT_TEMPLATE)
 
-        answer   = result.get("result", "No answer returned.")
-        src_docs = result.get("source_documents", [])
+        def format_docs(docs):
+            return "\n\n".join(doc.page_content for doc in docs)
+
+        chain = (
+            {
+                "context":  retriever | format_docs,
+                "question": RunnablePassthrough()
+            }
+            | prompt
+            | llm
+            | StrOutputParser()
+        )
+
+        # Run chain
+        answer   = chain.invoke(full_question)
+        src_docs = retriever.invoke(full_question)
 
         # Format sources
         sources = []
@@ -287,7 +228,7 @@ def ask_langchain(question: str, session_id: str) -> dict:
             "answer":     answer,
             "sources":    sources,
             "session_id": session_id,
-            "pipeline":   "langchain"
+            "pipeline":   "langchain-lcel"
         }
 
     except Exception as e:
@@ -296,5 +237,5 @@ def ask_langchain(question: str, session_id: str) -> dict:
             "answer":     f"LangChain pipeline error: {str(e)}",
             "sources":    [],
             "session_id": session_id,
-            "pipeline":   "langchain"
+            "pipeline":   "langchain-lcel"
         }

@@ -22,6 +22,7 @@ rank-bm25
 # LangChain + LangGraph
 langchain
 langchain-core
+langchain-community
 langchain-google-genai
 langchain-groq
 langchain-openai

@@ -27,24 +27,18 @@ Agent Graph:
        final answer           more context
      → Cites sources        → Human-in-the-loop
 ─────────────────────────────────────────
-
-Free-tier safe:
-- All LLM calls via API (Gemini/Groq/NVIDIA)
-- No local models
-- Lightweight state dict (no heavy objects)
-- Lazy imports to avoid startup crashes
 """
 
 import os
 import re
-from typing import TypedDict, Annotated, Literal
+from typing import TypedDict, Literal
 from dotenv import load_dotenv
 
 load_dotenv()
 
-GEMINI_API_KEY   = os.getenv("GEMINI_API_KEY")
-GROQ_API_KEY     = os.getenv("GROQ_API_KEY")
-NVIDIA_API_KEY   = os.getenv("NVIDIA_API_KEY")
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+GROQ_API_KEY   = os.getenv("GROQ_API_KEY")
+NVIDIA_API_KEY = os.getenv("NVIDIA_API_KEY")
 
 
 # ─────────────────────────────────────────────
@@ -52,49 +46,32 @@ NVIDIA_API_KEY   = os.getenv("NVIDIA_API_KEY")
 # ─────────────────────────────────────────────
 
 class AgentState(TypedDict):
-    """
-    Shared state passed between all agents in the graph.
-    Each agent reads and updates this state.
-    """
-    # Input
-    question:        str
-    session_id:      str
-    chat_history:    str
-
-    # Planner output
-    search_queries:  list[str]
-    search_strategy: str
-
-    # Retriever output
-    context:         str
-    sources:         list[dict]
-    chunk_count:     int
-
-    # Validator output
-    validation_score:   float
-    validation_reason:  str
-    is_sufficient:      bool
-
-    # Answer / Clarifier output
-    answer:          str
-    needs_clarification: bool
+    question:               str
+    session_id:             str
+    chat_history:           str
+    search_queries:         list
+    search_strategy:        str
+    context:                str
+    sources:                list
+    chunk_count:            int
+    validation_score:       float
+    validation_reason:      str
+    is_sufficient:          bool
+    answer:                 str
+    needs_clarification:    bool
     clarification_question: str
-
-    # Metadata
-    agents_used:     list[str]
-    llm_used:        str
-    error:           str
+    agents_used:            list
+    llm_used:               str
+    error:                  str
 
 
 # ─────────────────────────────────────────────
 # LLM Helper — 3-way fallback
 # ─────────────────────────────────────────────
 
-def call_llm(prompt: str, max_tokens: int = 512) -> tuple[str, str]:
-    """
-    Call LLMs in order: Gemini → Groq → NVIDIA
-    Returns (response_text, llm_name)
-    """
+def call_llm(prompt: str, max_tokens: int = 512) -> tuple:
+    """Call LLMs in order: Gemini → Groq → NVIDIA. Returns (text, llm_name)."""
+
     # 1. Gemini
     try:
         from google import genai
@@ -148,39 +125,36 @@ def call_llm(prompt: str, max_tokens: int = 512) -> tuple[str, str]:
 def planner_agent(state: AgentState) -> AgentState:
     """
     Understands user intent and creates a search strategy.
-
-    Responsibilities:
-    - Classify question type (factual, procedural, policy-based)
-    - Generate 3-4 targeted search queries
-    - Decide search strategy (broad vs specific)
+    Generates 3-4 targeted sub-queries from the original question.
     """
-    question      = state["question"]
-    chat_history  = state.get("chat_history", "")
-    agents_used   = state.get("agents_used", [])
+    question     = state["question"]
+    chat_history = state.get("chat_history", "")
+    agents_used  = state.get("agents_used", [])
 
     print(f"[PLANNER] Processing: {question[:60]}...")
 
-    prompt = f"""You are a search planning agent for an enterprise knowledge base.
+    history_section = ""
+    if chat_history:
+        history_section = "Previous conversation:\n" + chat_history + "\n\n"
 
-Your job is to analyze the user's question and create an optimal search strategy.
-
-User Question: {question}
-{"Previous conversation:" + chat_history if chat_history else ""}
-
-Respond in this EXACT format (no extra text):
-INTENT: <one sentence describing what the user wants>
-TYPE: <one of: factual / procedural / policy / comparison / general>
-STRATEGY: <one of: specific / broad / multi-aspect>
-QUERY_1: <first search query>
-QUERY_2: <second search query>
-QUERY_3: <third search query>"""
+    prompt = (
+        "You are a search planning agent for an enterprise knowledge base.\n\n"
+        "Analyze the user question and create an optimal search strategy.\n\n"
+        + history_section
+        + "User Question: " + question + "\n\n"
+        "Respond in this EXACT format (no extra text):\n"
+        "INTENT: <one sentence describing what the user wants>\n"
+        "TYPE: <one of: factual / procedural / policy / comparison / general>\n"
+        "STRATEGY: <one of: specific / broad / multi-aspect>\n"
+        "QUERY_1: <first search query>\n"
+        "QUERY_2: <second search query>\n"
+        "QUERY_3: <third search query>"
+    )
 
     response, llm = call_llm(prompt, max_tokens=300)
 
-    # Parse response
     queries  = []
     strategy = "broad"
-    intent   = question
 
     for line in response.split("\n"):
         line = line.strip()
@@ -190,12 +164,9 @@ QUERY_3: <third search query>"""
                 queries.append(q)
         elif line.startswith("STRATEGY:"):
             strategy = line.split(":", 1)[-1].strip()
-        elif line.startswith("INTENT:"):
-            intent = line.split(":", 1)[-1].strip()
 
-    # Always include original question
     queries.append(question)
-    queries = list(dict.fromkeys(queries))[:4]  # deduplicate, keep max 4
+    queries = list(dict.fromkeys(queries))[:4]
 
     print(f"[PLANNER] Strategy: {strategy}, Queries: {len(queries)}")
 
@@ -214,20 +185,15 @@ QUERY_3: <third search query>"""
 
 def retriever_agent(state: AgentState) -> AgentState:
     """
-    Executes hybrid search using planned queries.
-
-    Responsibilities:
-    - Run BM25 + Vector search for each query
-    - Apply RRF fusion
-    - Deduplicate and return top chunks
+    Executes hybrid BM25 + Vector search using planned queries.
+    Applies RRF fusion and returns top ranked chunks.
     """
-    queries   = state.get("search_queries", [state["question"]])
+    queries     = state.get("search_queries", [state["question"]])
     agents_used = state.get("agents_used", [])
 
     print(f"[RETRIEVER] Running {len(queries)} queries...")
 
     try:
-        # Import here to avoid circular imports
         from app.api.rag_api import (
             vector_search,
             bm25_search,
@@ -241,7 +207,6 @@ def retriever_agent(state: AgentState) -> AgentState:
             all_vector.extend(vector_search(q, top_k=3))
             all_bm25.extend(bm25_search(q, top_k=3))
 
-        # Deduplicate
         seen_v        = set()
         unique_vector = []
         for r in all_vector:
@@ -256,7 +221,6 @@ def retriever_agent(state: AgentState) -> AgentState:
                 seen_b.add(r["text"])
                 unique_bm25.append(r)
 
-        # RRF fusion
         fused = reciprocal_rank_fusion(unique_vector, unique_bm25)
         top   = fused[:5]
 
@@ -308,18 +272,14 @@ def retriever_agent(state: AgentState) -> AgentState:
 def validator_agent(state: AgentState) -> AgentState:
     """
     Validates whether retrieved context is sufficient to answer.
-
-    Responsibilities:
-    - Score relevance of context to question (0.0 - 1.0)
-    - Decide: sufficient → proceed to Answer
-              insufficient → proceed to Clarifier
-    - Threshold: 0.5 (below = needs clarification)
+    Score >= 0.5 → Answer Agent
+    Score < 0.5  → Clarifier Agent (human-in-the-loop)
     """
     question    = state["question"]
     context     = state.get("context", "")
     agents_used = state.get("agents_used", [])
 
-    print(f"[VALIDATOR] Checking context sufficiency...")
+    print("[VALIDATOR] Checking context sufficiency...")
 
     if not context:
         print("[VALIDATOR] No context — routing to clarifier")
@@ -331,47 +291,44 @@ def validator_agent(state: AgentState) -> AgentState:
             "agents_used":       agents_used + ["validator"]
         }
 
-    prompt = f"""You are a quality validation agent for a RAG system.
-
-Evaluate whether the retrieved context contains sufficient information to answer the question.
-
-Question: {question}
-
-Retrieved Context:
-{context[:800]}
-
-Reply in this EXACT format (no extra text):
-SCORE: <decimal 0.0-1.0>
-REASON: <one sentence explaining the score>
-SUFFICIENT: <YES or NO>
-
-Scoring guide:
-0.8-1.0 = context directly and completely answers the question
-0.5-0.7 = context partially answers the question
-0.0-0.4 = context does not contain relevant information"""
+    prompt = (
+        "You are a quality validation agent for a RAG system.\n\n"
+        "Evaluate whether the retrieved context contains sufficient information "
+        "to answer the question.\n\n"
+        "Question: " + question + "\n\n"
+        "Retrieved Context:\n" + context[:800] + "\n\n"
+        "Reply in this EXACT format (no extra text):\n"
+        "SCORE: <decimal 0.0-1.0>\n"
+        "REASON: <one sentence explaining the score>\n"
+        "SUFFICIENT: <YES or NO>\n\n"
+        "Scoring guide:\n"
+        "0.8-1.0 = context directly and completely answers the question\n"
+        "0.5-0.7 = context partially answers the question\n"
+        "0.0-0.4 = context does not contain relevant information"
+    )
 
     response, _ = call_llm(prompt, max_tokens=150)
 
-    # Parse response
-    score       = 0.5
-    reason      = "Context partially relevant."
+    score         = 0.5
+    reason        = "Context partially relevant."
     is_sufficient = True
 
     for line in response.split("\n"):
         line = line.strip()
         if line.startswith("SCORE:"):
             try:
-                val = float(re.findall(r"\d+\.?\d*", line)[0])
-                score = val if val <= 1.0 else val / 10
+                nums = re.findall(r"\d+\.?\d*", line)
+                if nums:
+                    val   = float(nums[0])
+                    score = val if val <= 1.0 else val / 10
             except Exception:
                 score = 0.5
         elif line.startswith("REASON:"):
             reason = line.split(":", 1)[-1].strip()
         elif line.startswith("SUFFICIENT:"):
             val = line.split(":", 1)[-1].strip().upper()
-            is_sufficient = val == "YES"
+            is_sufficient = (val == "YES")
 
-    # Override: if score below threshold, mark insufficient
     if score < 0.5:
         is_sufficient = False
 
@@ -392,33 +349,33 @@ Scoring guide:
 
 def answer_agent(state: AgentState) -> AgentState:
     """
-    Generates the final grounded answer.
-
-    Responsibilities:
-    - Use ONLY retrieved context
-    - Generate complete, well-structured answer
-    - Never hallucinate
+    Generates final grounded answer using ONLY retrieved context.
+    Never hallucinates — strictly context-bound.
     """
     question     = state["question"]
     context      = state["context"]
     chat_history = state.get("chat_history", "")
     agents_used  = state.get("agents_used", [])
 
-    print(f"[ANSWER] Generating response...")
+    print("[ANSWER] Generating response...")
+
+    history_section = ""
+    if chat_history:
+        history_section = "Previous conversation:\n" + chat_history + "\n\n"
 
     prompt = (
-        "You are an enterprise AI assistant. Answer the question using ONLY "
-        "the provided context. Give complete answers with full sentences.\n\n"
+        "You are an enterprise AI assistant. Answer using ONLY the provided context.\n\n"
         "Rules:\n"
         "- Use ONLY information from the context\n"
         "- Never invent or assume information\n"
-        "- Give complete, well-structured answers\n"
+        "- Give complete, well-structured answers with full sentences\n"
+        "- Include relevant details, not just numbers\n"
         "- If context is insufficient say: "
         "'The information is not fully available in the provided documents'\n\n"
-        f"{'Previous conversation:\n' + chat_history + chr(10) if chat_history else ''}"
-        f"Context:\n{context}\n\n"
-        f"Question: {question}\n\n"
-        "Answer:"
+        + history_section
+        + "Context:\n" + context + "\n\n"
+        + "Question: " + question + "\n\n"
+        + "Answer:"
     )
 
     answer, llm = call_llm(prompt, max_tokens=1024)
@@ -427,11 +384,11 @@ def answer_agent(state: AgentState) -> AgentState:
 
     return {
         **state,
-        "answer":                answer,
-        "needs_clarification":   False,
+        "answer":                 answer,
+        "needs_clarification":    False,
         "clarification_question": "",
-        "agents_used":           agents_used + ["answer"],
-        "llm_used":              llm
+        "agents_used":            agents_used + ["answer"],
+        "llm_used":               llm
     }
 
 
@@ -443,53 +400,43 @@ def clarifier_agent(state: AgentState) -> AgentState:
     """
     Human-in-the-loop agent.
     When context is insufficient, asks user to clarify
-    instead of hallucinating an answer.
-
-    Responsibilities:
-    - Explain what was found (if anything)
-    - Ask a specific clarifying question
-    - Guide user to rephrase or narrow their query
+    instead of hallucinating. Guides user to rephrase.
     """
     question    = state["question"]
     reason      = state.get("validation_reason", "")
     agents_used = state.get("agents_used", [])
 
-    print(f"[CLARIFIER] Insufficient context — asking for clarification")
+    print("[CLARIFIER] Insufficient context — asking for clarification")
 
-    prompt = f"""You are a helpful assistant. The knowledge base doesn't have enough 
-information to fully answer the user's question.
-
-User Question: {question}
-Reason context was insufficient: {reason}
-
-Generate a helpful response that:
-1. Acknowledges you couldn't find complete information
-2. Asks ONE specific clarifying question to help find better results
-3. Suggests how to rephrase the question
-
-Keep it concise and friendly."""
+    prompt = (
+        "You are a helpful assistant. The knowledge base does not have enough "
+        "information to fully answer the user's question.\n\n"
+        "User Question: " + question + "\n"
+        "Reason context was insufficient: " + reason + "\n\n"
+        "Generate a helpful response that:\n"
+        "1. Acknowledges you could not find complete information\n"
+        "2. Asks ONE specific clarifying question to help find better results\n"
+        "3. Suggests how to rephrase the question\n\n"
+        "Keep it concise and friendly."
+    )
 
     clarification, llm = call_llm(prompt, max_tokens=200)
 
     return {
         **state,
-        "answer":                clarification,
-        "needs_clarification":   True,
+        "answer":                 clarification,
+        "needs_clarification":    True,
         "clarification_question": clarification,
-        "agents_used":           agents_used + ["clarifier"],
-        "llm_used":              llm
+        "agents_used":            agents_used + ["clarifier"],
+        "llm_used":               llm
     }
 
 
 # ─────────────────────────────────────────────
-# Router — Validator decision
+# Router
 # ─────────────────────────────────────────────
 
 def route_after_validation(state: AgentState) -> Literal["answer", "clarify"]:
-    """
-    Routing function called after Validator agent.
-    Determines next node based on validation result.
-    """
     if state.get("is_sufficient", True):
         return "answer"
     return "clarify"
@@ -501,28 +448,23 @@ def route_after_validation(state: AgentState) -> Literal["answer", "clarify"]:
 
 def build_agent_graph():
     """
-    Builds the LangGraph StateGraph with all 4 agents.
-
-    Graph structure:
-    START → planner → retriever → validator → (answer | clarifier) → END
+    Builds and compiles the LangGraph StateGraph.
+    START → planner → retriever → validator → answer|clarifier → END
     """
     from langgraph.graph import StateGraph, END
 
     graph = StateGraph(AgentState)
 
-    # Add nodes
     graph.add_node("planner",   planner_agent)
     graph.add_node("retriever", retriever_agent)
     graph.add_node("validator", validator_agent)
     graph.add_node("answer",    answer_agent)
     graph.add_node("clarifier", clarifier_agent)
 
-    # Add edges
     graph.set_entry_point("planner")
     graph.add_edge("planner",   "retriever")
     graph.add_edge("retriever", "validator")
 
-    # Conditional routing after validator
     graph.add_conditional_edges(
         "validator",
         route_after_validation,
@@ -532,7 +474,6 @@ def build_agent_graph():
         }
     )
 
-    # Both answer and clarifier go to END
     graph.add_edge("answer",    END)
     graph.add_edge("clarifier", END)
 
@@ -540,20 +481,13 @@ def build_agent_graph():
 
 
 # ─────────────────────────────────────────────
-# Public Function
+# Public Entry Point
 # ─────────────────────────────────────────────
 
 def run_agent(question: str, session_id: str, chat_history: str = "") -> dict:
     """
-    Run the full multi-agent pipeline.
-
-    Args:
-        question:     User question
-        session_id:   Session ID for tracking
-        chat_history: Previous conversation context
-
-    Returns:
-        dict with answer, sources, agents_used, metadata
+    Run the full 4-agent LangGraph pipeline.
+    Returns answer, sources, agent trace, and metadata.
     """
     try:
         agent_graph = build_agent_graph()
@@ -590,6 +524,7 @@ def run_agent(question: str, session_id: str, chat_history: str = "") -> dict:
             "needs_clarification": final_state.get("needs_clarification", False),
             "search_queries":      final_state.get("search_queries", []),
             "chunk_count":         final_state.get("chunk_count", 0),
+            "search_strategy":     final_state.get("search_strategy", ""),
             "pipeline":            "langgraph-multi-agent"
         }
 
@@ -605,6 +540,7 @@ def run_agent(question: str, session_id: str, chat_history: str = "") -> dict:
             "needs_clarification": False,
             "search_queries":      [question],
             "chunk_count":         0,
+            "search_strategy":     "",
             "pipeline":            "langgraph-multi-agent",
             "error":               str(e)
         }
