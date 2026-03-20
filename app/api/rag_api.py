@@ -708,9 +708,18 @@ def _trulens_score(question: str, answer: str, context: str) -> dict:
             "Question: " + question + "\nAnswer: " + answer[:250] + "\nScore:"
         ),
         "context_relevance": _trulens_judge(
-            "Judge: single decimal 0.0-1.0 only. No words.\n"
-            "Is context relevant to question? 1.0=highly 0.5=somewhat 0.0=no\n"
-            "Question: " + question + "\nContext: " + context[:400] + "\nScore:"
+            "You are a relevance judge. Reply with single decimal 0.0-1.0 only. No words.\n\n"
+            "Task: Is the context TOPICALLY RELATED to the question?\n"
+            "Not whether it fully answers it. Just: is it about the same subject?\n\n"
+            "1.0 = context is about the same topic as the question\n"
+            "0.7 = context mostly covers the same topic\n"
+            "0.4 = context partially related\n"
+            "0.0 = context is about a completely different topic\n\n"
+            "If question asks about sick leave and context mentions sick leave = 1.0\n"
+            "If question asks about passwords and context mentions password policy = 1.0\n\n"
+            "Question: " + question + "\n"
+            "Context: " + context[:500] + "\n\n"
+            "Score (e.g. 0.8):"
         )
     }
 
