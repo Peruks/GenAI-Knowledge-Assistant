@@ -1,0 +1,54 @@
+name: NEXUS CI
+
+# ─────────────────────────────────────────────
+# Triggers
+# ─────────────────────────────────────────────
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+# ─────────────────────────────────────────────
+# Jobs
+# ─────────────────────────────────────────────
+
+jobs:
+
+  test:
+    name: Run API Tests
+    runs-on: ubuntu-latest
+
+    steps:
+
+      # 1. Check out the code
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2. Set up Python
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      # 3. Install only test dependencies (not full stack)
+      #    We test the live Railway API — no local server needed
+      - name: Install test dependencies
+        run: |
+          pip install pytest requests
+
+      # 4. Run tests against live Railway backend
+      #    Tests call the deployed API directly
+      - name: Run API tests
+        run: |
+          pytest tests/test_api.py -v --tb=short
+        env:
+          PYTHONPATH: .
+
+      # 5. Show test summary
+      - name: Test Summary
+        if: always()
+        run: |
+          echo "Tests completed"
+          echo "Check the test output above for pass/fail details"

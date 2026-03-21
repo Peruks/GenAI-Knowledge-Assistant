@@ -316,9 +316,8 @@ def validator_agent(state: AgentState) -> AgentState:
 
     response, llm = call_with_fallback(prompt, primary="nvidia", max_tokens=150)
 
-    score         = 0.5
-    reason        = "Context partially relevant."
-    is_sufficient = True
+    score  = 0.5
+    reason = "Context partially relevant."
 
     for line in response.split("\n"):
         line = line.strip()
@@ -332,12 +331,10 @@ def validator_agent(state: AgentState) -> AgentState:
                 score = 0.5
         elif line.startswith("REASON:"):
             reason = line.split(":", 1)[-1].strip()
-        elif line.startswith("SUFFICIENT:"):
-            val = line.split(":", 1)[-1].strip().upper()
-            is_sufficient = (val == "YES")
 
-    if score < 0.5:
-        is_sufficient = False
+    # Derive is_sufficient purely from score
+    # Fixes bug: NVIDIA returns "NO" text but score >= 0.5
+    is_sufficient = score >= 0.6
 
     print(f"[VALIDATOR] Score: {score:.2f} via {llm}")
 
